@@ -47,6 +47,31 @@ class DayPnl(BaseModel):
     trade_count: int
 
 
+class FxRate(BaseModel):
+    pair: str
+    rate: Optional[float] = None
+
+
+class Position(BaseModel):
+    symbol: str
+    quantity: float
+    avg_cost: float
+    currency: Optional[str] = None
+    asset_category: Optional[str] = None
+    last_price: Optional[float] = None
+    market_value: Optional[float] = None
+    unrealized_pnl: Optional[float] = None
+
+
+class Portfolio(BaseModel):
+    positions: list[Position]
+    usd_sgd_rate: Optional[float] = None
+    total_market_value_usd: float
+    total_unrealized_pnl_usd: float
+    total_market_value_sgd: Optional[float] = None
+    total_unrealized_pnl_sgd: Optional[float] = None
+
+
 class Summary(BaseModel):
     total_pnl: float
     total_trades: int

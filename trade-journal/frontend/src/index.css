@@ -36,6 +36,34 @@ body {
   margin-bottom: 24px;
 }
 
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.fx-ticker {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: default;
+}
+
+.fx-ticker .fx-label {
+  color: var(--text-dim);
+}
+
+.fx-ticker .fx-value {
+  font-weight: 600;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
 .app-header h1 {
   font-size: 20px;
   margin: 0;
@@ -333,4 +361,38 @@ th {
   font-size: 13px;
   padding: 20px 0;
   text-align: center;
+}
+
+.quote-gap-note {
+  font-size: 12px;
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+}
+
+.portfolio-totals {
+  display: flex;
+  gap: 32px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--panel-border);
+}
+
+.portfolio-totals > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.portfolio-totals .label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+  font-weight: 500;
 }

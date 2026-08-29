@@ -21,6 +21,10 @@ Stack: **React + TypeScript** (Vite) frontend, **FastAPI** backend,
 - Summary stats: total P&L, win rate, avg win/loss, profit factor, best/worst
   day
 - Paginated, filterable trade blotter
+- Open positions valued with live quotes (via `yfinance`/Yahoo Finance),
+  showing unrealized P&L per position and portfolio-wide, refreshed every 30s
+- Live USD/SGD exchange rate ticker, with portfolio totals also shown
+  converted to SGD
 
 ## Getting an IBKR-compatible export
 
@@ -79,6 +83,8 @@ VITE_API_URL=http://localhost:8000 npm run dev
 | GET    | `/api/pnl/summary`    | Overall summary stats                          |
 | GET    | `/api/trades`         | Paginated trade list (`symbol`, `start`, `end`)|
 | DELETE | `/api/trades`         | Clear all imported trades                      |
+| GET    | `/api/portfolio`      | Open positions with live quotes & unrealized P&L, in USD and SGD |
+| GET    | `/api/fx/usdsgd`      | Live USD/SGD exchange rate                     |
 
 ## Design notes
 
@@ -91,3 +97,15 @@ VITE_API_URL=http://localhost:8000 npm run dev
 - **Idempotent imports**: each fill gets a stable id hashed from
   account/symbol/timestamp/quantity/price/proceeds, enforced as a unique
   constraint, so re-uploading overlapping statements is safe.
+- **Live quotes via `yfinance`**: there's no supported public API for Google
+  Finance, so `yfinance` (Yahoo Finance) is used for both equity quotes and
+  the USD/SGD rate (`USDSGD=X`). Quotes are cached in-process for 30s to
+  avoid hammering/being rate-limited by Yahoo. If a quote can't be fetched
+  (network issue, symbol not found, rate limit), the API returns `null` for
+  that field instead of erroring, and the UI shows "—" until the next
+  refresh — it never blocks the rest of the dashboard.
+- **Open-position cost basis**: unrealized P&L needs a cost basis for shares
+  still held, which IBKR's per-fill Realized P/L doesn't provide (it's 0 on
+  opens). `backend/app/services/positions.py` tracks a running
+  weighted-average cost per symbol from the imported fills — simpler than
+  FIFO lot tracking and a standard approximation for this purpose.

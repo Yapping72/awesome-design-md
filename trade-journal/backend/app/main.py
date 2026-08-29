@@ -7,7 +7,7 @@ from sqlalchemy.exc import OperationalError
 
 from .config import settings
 from .database import Base, engine
-from .routers import pnl, trades, upload
+from .routers import market, pnl, trades, upload
 
 logger = logging.getLogger("trade_journal")
 
@@ -24,6 +24,7 @@ app.add_middleware(
 app.include_router(upload.router)
 app.include_router(trades.router)
 app.include_router(pnl.router)
+app.include_router(market.router)
 
 
 @app.on_event("startup")

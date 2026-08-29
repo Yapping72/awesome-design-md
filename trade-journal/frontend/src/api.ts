@@ -1,7 +1,9 @@
 import type {
   AggregationPeriod,
   DayPnl,
+  FxRate,
   PeriodPnl,
+  Portfolio,
   Summary,
   TradesPage,
   UploadResult,
@@ -59,4 +61,12 @@ export function getTrades(params: {
   if (params.pageSize) qs.set("page_size", String(params.pageSize));
   if (params.symbol) qs.set("symbol", params.symbol);
   return request<TradesPage>(`/api/trades?${qs.toString()}`);
+}
+
+export function getUsdSgdRate(): Promise<FxRate> {
+  return request<FxRate>("/api/fx/usdsgd");
+}
+
+export function getPortfolio(): Promise<Portfolio> {
+  return request<Portfolio>("/api/portfolio");
 }

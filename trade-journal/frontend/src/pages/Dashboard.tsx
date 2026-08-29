@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { getSummary } from "../api";
 import AggregationChart from "../components/AggregationChart";
 import Calendar from "../components/Calendar";
+import PortfolioPanel from "../components/PortfolioPanel";
 import SummaryCards from "../components/SummaryCards";
 import UploadPanel from "../components/UploadPanel";
 import type { Summary } from "../types";
@@ -25,6 +26,7 @@ export default function Dashboard({ onDataChanged }: { onDataChanged: () => void
     <>
       <UploadPanel onUploaded={refresh} />
       {summary && <SummaryCards summary={summary} />}
+      <PortfolioPanel refreshKey={refreshKey} />
       <Calendar refreshKey={refreshKey} />
       <AggregationChart refreshKey={refreshKey} />
     </>

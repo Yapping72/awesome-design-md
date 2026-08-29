@@ -54,3 +54,28 @@ export interface UploadResult {
 }
 
 export type AggregationPeriod = "day" | "week" | "month";
+
+export interface FxRate {
+  pair: string;
+  rate: number | null;
+}
+
+export interface Position {
+  symbol: string;
+  quantity: number;
+  avg_cost: number;
+  currency: string | null;
+  asset_category: string | null;
+  last_price: number | null;
+  market_value: number | null;
+  unrealized_pnl: number | null;
+}
+
+export interface Portfolio {
+  positions: Position[];
+  usd_sgd_rate: number | null;
+  total_market_value_usd: number;
+  total_unrealized_pnl_usd: number;
+  total_market_value_sgd: number | null;
+  total_unrealized_pnl_sgd: number | null;
+}
