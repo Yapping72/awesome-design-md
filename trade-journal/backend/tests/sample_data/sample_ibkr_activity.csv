@@ -1,0 +1,13 @@
+Statement,Header,Field Name,Field Value
+Statement,Data,BrokerName,Interactive Brokers
+Statement,Data,Title,Activity Statement
+Trades,Header,DataDiscriminator,Asset Category,Currency,Symbol,Date/Time,Quantity,T. Price,C. Price,Proceeds,Comm/Fee,Basis,Realized P/L,MTM P/L,Code
+Trades,Data,Order,Stocks,USD,AAPL,"2024-01-02, 09:31:00",100,185.5,186.2,-18550,-1,18551,0,70,O
+Trades,Data,Order,Stocks,USD,AAPL,"2024-01-02, 15:45:00",-100,190,190,19000,-1,18551,449,0,C
+Trades,Data,Order,Stocks,USD,TSLA,"2024-01-03, 10:05:00",50,240,238,-12000,-1,12001,0,-100,O
+Trades,Data,Order,Stocks,USD,TSLA,"2024-01-03, 14:22:00",-50,235,235,11750,-1,12001,-251,0,C
+Trades,Data,Order,Stocks,USD,MSFT,"2024-01-05, 09:40:00",30,370,372,-11100,-1,11101,0,60,O
+Trades,Data,Order,Stocks,USD,MSFT,"2024-01-05, 11:12:00",-30,375,375,11250,-1,11101,149,0,C
+Trades,SubTotal,,Stocks,USD,,,,,,,,,347,,
+MTM Summary,Header,Asset Category,Symbol,Prior Quantity,Current Quantity,Prior Price,Current Price,MTM P/L
+MTM Summary,Data,Stocks,AAPL,0,0,0,0,0

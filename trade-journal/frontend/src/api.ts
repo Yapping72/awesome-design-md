@@ -1,0 +1,62 @@
+import type {
+  AggregationPeriod,
+  DayPnl,
+  PeriodPnl,
+  Summary,
+  TradesPage,
+  UploadResult,
+} from "./types";
+
+const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, init);
+  if (!res.ok) {
+    let detail = res.statusText;
+    try {
+      const body = await res.json();
+      detail = body.detail ?? detail;
+    } catch {
+      // response wasn't JSON — fall back to statusText
+    }
+    throw new Error(detail);
+  }
+  return res.json() as Promise<T>;
+}
+
+export function uploadReport(file: File): Promise<UploadResult> {
+  const form = new FormData();
+  form.append("file", file);
+  return request<UploadResult>("/api/upload", { method: "POST", body: form });
+}
+
+export function getCalendar(year: number, month: number): Promise<DayPnl[]> {
+  return request<DayPnl[]>(`/api/pnl/calendar?year=${year}&month=${month}`);
+}
+
+export function getAggregate(
+  period: AggregationPeriod,
+  start?: string,
+  end?: string
+): Promise<PeriodPnl[]> {
+  const params = new URLSearchParams({ period });
+  if (start) params.set("start", start);
+  if (end) params.set("end", end);
+  return request<PeriodPnl[]>(`/api/pnl/aggregate?${params.toString()}`);
+}
+
+export function getSummary(): Promise<Summary> {
+  return request<Summary>("/api/pnl/summary");
+}
+
+export function getTrades(params: {
+  page?: number;
+  pageSize?: number;
+  symbol?: string;
+}): Promise<TradesPage> {
+  const qs = new URLSearchParams();
+  if (params.page) qs.set("page", String(params.page));
+  if (params.pageSize) qs.set("page_size", String(params.pageSize));
+  if (params.symbol) qs.set("symbol", params.symbol);
+  return request<TradesPage>(`/api/trades?${qs.toString()}`);
+}
