@@ -6,25 +6,13 @@ stats, a calendar heatmap of daily P&L, and P&L aggregated by day, week, or
 month.
 
 Stack: **React + TypeScript** (Vite) frontend, **FastAPI** backend,
-**PostgreSQL** storage, all containerized with **Docker Compose**.
+**PostgreSQL** storage (schema managed by **Alembic**), all containerized
+with **Docker Compose**.
 
-## Features
-
-- Import an IBKR Activity Statement CSV export (drag & drop or file picker)
-- Idempotent import — re-uploading the same statement skips already-imported
-  fills instead of double-counting
-- Realized P&L is read directly from IBKR's own `Realized P/L` column (net of
-  commission), so figures match what IBKR itself reports — no separate
-  FIFO/lot-matching engine to get out of sync
-- Calendar view of daily P&L (green/red heatmap, like a trading journal)
-- P&L aggregation by day / week / month with a bar chart
-- Summary stats: total P&L, win rate, avg win/loss, profit factor, best/worst
-  day
-- Paginated, filterable trade blotter
-- Open positions valued with live quotes (via `yfinance`/Yahoo Finance),
-  showing unrealized P&L per position and portfolio-wide, refreshed every 30s
-- Live USD/SGD exchange rate ticker, with portfolio totals also shown
-  converted to SGD
+See **[SPEC.md](./SPEC.md)** for the full current feature list, data model,
+API reference, and the enhancement backlog — this README covers setup and a
+few cross-cutting design decisions. SPEC.md is the living document; this
+README isn't duplicated there to avoid the two drifting out of sync.
 
 ## Getting an IBKR-compatible export
 
@@ -49,7 +37,9 @@ docker compose up --build
 - Backend API: http://localhost:8000 (docs at `/docs`)
 - Postgres: localhost:5432 (`journal` / `journal` / `trade_journal`)
 
-Database tables are created automatically on backend startup.
+The database schema is brought up to date automatically on backend startup
+(`alembic upgrade head` runs in the app's lifespan handler) — no manual
+migration step needed to get a fresh container running.
 
 ## Local development (without Docker)
 
@@ -65,6 +55,22 @@ uvicorn app.main:app --reload
 
 Run tests: `pytest`
 
+**Database migrations**
+
+Schema changes go through Alembic, not `Base.metadata.create_all`:
+
+```bash
+# after changing a model in app/models.py
+alembic revision --autogenerate -m "describe the change"
+# review the generated file in alembic/versions/, then:
+alembic upgrade head
+```
+
+`alembic/env.py` reads the same `DATABASE_URL` env var as the app, so no
+separate configuration is needed. The app also runs `alembic upgrade head`
+itself on startup, so applying a new migration to a running deployment is
+just restarting the backend container after the migration file is merged.
+
 **Frontend**
 
 ```bash
@@ -75,16 +81,10 @@ VITE_API_URL=http://localhost:8000 npm run dev
 
 ## API
 
-| Method | Path                 | Description                                   |
-| ------ | -------------------- | ---------------------------------------------- |
-| POST   | `/api/upload`         | Upload an IBKR Activity Statement CSV          |
-| GET    | `/api/pnl/calendar`   | Daily P&L for a given `year`/`month`           |
-| GET    | `/api/pnl/aggregate`  | P&L aggregated by `period=day\|week\|month`    |
-| GET    | `/api/pnl/summary`    | Overall summary stats                          |
-| GET    | `/api/trades`         | Paginated trade list (`symbol`, `start`, `end`)|
-| DELETE | `/api/trades`         | Clear all imported trades                      |
-| GET    | `/api/portfolio`      | Open positions with live quotes & unrealized P&L, in USD and SGD |
-| GET    | `/api/fx/usdsgd`      | Live USD/SGD exchange rate                     |
+Full endpoint reference is in [SPEC.md § API reference](./SPEC.md#5-api-reference)
+— kept there rather than here so it's only ever accurate in one place. The
+short version: everything is under `/api/`, with interactive docs (and the
+canonical, always-current schema) at `/docs` on the running backend.
 
 ## Design notes
 
@@ -97,6 +97,13 @@ VITE_API_URL=http://localhost:8000 npm run dev
 - **Idempotent imports**: each fill gets a stable id hashed from
   account/symbol/timestamp/quantity/price/proceeds, enforced as a unique
   constraint, so re-uploading overlapping statements is safe.
+- **Alembic, not `create_all`**: `Base.metadata.create_all()` only ever
+  creates tables that don't exist yet — it silently does nothing about a
+  column added to an existing table, which would otherwise mean a schema
+  change quietly failing to apply to an already-running deployment. Alembic
+  migrations (`alembic/versions/`) make every schema change explicit and
+  applied in order, and the app runs `alembic upgrade head` itself on
+  startup so this stays a zero-extra-step deploy.
 - **Live quotes via `yfinance`**: there's no supported public API for Google
   Finance, so `yfinance` (Yahoo Finance) is used for both equity quotes and
   the USD/SGD rate (`USDSGD=X`). Quotes are cached in-process for 30s to
