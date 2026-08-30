@@ -157,6 +157,7 @@ export default function RoundTripsTable() {
       )}
       {!loading && items.length > 0 && (
         <>
+          <div className="table-scroll">
           <table>
             <thead>
               <tr>
@@ -226,6 +227,7 @@ export default function RoundTripsTable() {
               ))}
             </tbody>
           </table>
+          </div>
           <div className="pagination">
             <button disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
               Prev

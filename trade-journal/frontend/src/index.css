@@ -390,6 +390,10 @@ nav.tabs button.active {
   color: #fff;
 }
 
+.table-scroll {
+  overflow-x: auto;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
@@ -633,4 +637,71 @@ th.sortable-th:hover {
   letter-spacing: 0.5px;
   color: var(--text-dim);
   font-weight: 500;
+}
+
+@media (max-width: 640px) {
+  #root {
+    padding: 16px 12px 40px;
+  }
+
+  .app-header {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .header-right {
+    flex-wrap: wrap;
+  }
+
+  .panel {
+    padding: 14px 14px;
+  }
+
+  .cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .filters {
+    flex-wrap: wrap;
+  }
+
+  .filters input {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .calendar-grid {
+    gap: 3px;
+  }
+
+  .day-cell {
+    min-height: 44px;
+    padding: 4px 5px;
+  }
+
+  .day-cell .day-num {
+    font-size: 10px;
+  }
+
+  .day-cell .day-pnl {
+    font-size: 11px;
+    margin-top: 2px;
+  }
+
+  .day-cell .day-count {
+    display: none;
+  }
+
+  .pagination {
+    flex-wrap: wrap;
+  }
+
+  .portfolio-totals {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .note-editor {
+    max-width: none;
+  }
 }

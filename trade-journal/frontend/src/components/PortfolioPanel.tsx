@@ -60,6 +60,7 @@ export default function PortfolioPanel({ refreshKey }: { refreshKey: number }) {
               unrealized P&amp;L show as “—” until the next refresh.
             </div>
           )}
+          <div className="table-scroll">
           <table>
             <thead>
               <tr>
@@ -86,6 +87,7 @@ export default function PortfolioPanel({ refreshKey }: { refreshKey: number }) {
               ))}
             </tbody>
           </table>
+          </div>
           <div className="portfolio-totals">
             <div>
               <span className="label">Market value</span>

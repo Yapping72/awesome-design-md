@@ -21,6 +21,7 @@ export default function SymbolPerformanceTable({ refreshKey }: { refreshKey: num
         <div className="empty-state">No closed round trips yet.</div>
       )}
       {!loading && rows.length > 0 && (
+        <div className="table-scroll">
         <table>
           <thead>
             <tr>
@@ -49,6 +50,7 @@ export default function SymbolPerformanceTable({ refreshKey }: { refreshKey: num
             ))}
           </tbody>
         </table>
+        </div>
       )}
     </div>
   );

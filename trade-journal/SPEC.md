@@ -142,6 +142,11 @@ reattributed to a later, overlapping upload.
   colors (recharts renders `fill`/`stroke` as literal SVG attributes, not
   through the CSS cascade) come from `useChartColors()`, which reads the
   resolved CSS custom properties and recomputes on a `themechange` event.
+- **Mobile-responsive**: a `max-width: 640px` breakpoint reflows the header,
+  summary cards (2-column grid), and calendar for narrow viewports; every
+  data table sits inside a `.table-scroll` container so a wide table (the
+  Round Trips view has 11 columns) scrolls within its own box instead of
+  the whole page gaining horizontal scroll.
 - **Equity curve**: cumulative realized net P&L over time as an area
   chart on the dashboard (`GET /api/pnl/equity-curve`), a running sum
   over the same daily P&L used by the calendar view.
@@ -218,10 +223,28 @@ each tier.
 |---|---|---|
 | 10 | Light theme toggle (dark exists today) | done |
 | 11 | Docker Compose healthchecks for backend/frontend, runtime-configurable frontend API URL (currently baked in at image build time) | done |
-| 12 | Mobile-responsive layout pass | planned |
+| 12 | Mobile-responsive layout pass | done |
 
 ## 8. Changelog
 
+- 2026-08-30 — Backlog #12 done, completing the entire backlog (12/12):
+  mobile-responsive layout pass. Added a `.table-scroll` wrapper
+  (`overflow-x: auto`) around every `<table>` — Trades, Round Trips,
+  Portfolio, Symbol Performance — so a wide table scrolls within its own
+  box on a narrow viewport instead of forcing the whole page to scroll
+  horizontally (the Round Trips table has 11 columns; that was the real
+  risk here). Added a `max-width: 640px` media query reflowing the
+  header (wraps instead of clipping), summary cards (2-column grid
+  instead of the auto-fit desktop grid), and the calendar (smaller cells,
+  fill count hidden to save space, day number and P&L still both shown).
+  Verified in a real 375×812 viewport (iPhone-sized): checked
+  `document.documentElement.scrollWidth` never exceeds `clientWidth` on
+  either the Dashboard or Trades page (no page-level horizontal
+  scrollbar), then proved the Round Trips table's *own* scroll actually
+  works — not just that overflow is clipped — by scrolling
+  `.table-scroll` programmatically and confirming the Hold/Commission/
+  P&L/Notes columns that don't fit at 375px become visible while the
+  header, filters, and pagination stay in place.
 - 2026-08-30 — Backlog #11 done: Docker healthchecks + runtime-portable
   frontend image. Root cause of the "baked in at build time" problem: the
   frontend previously received `VITE_API_URL` as a build ARG, so the
