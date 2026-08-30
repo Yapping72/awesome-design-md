@@ -119,3 +119,43 @@ def compute_round_trips(db: Session) -> list[RoundTrip]:
 
     round_trips.sort(key=lambda rt: rt["exit_time"])
     return round_trips
+
+
+class SymbolPerformance(TypedDict):
+    symbol: str
+    trade_count: int
+    wins: int
+    losses: int
+    win_rate: float
+    total_pnl: float
+    avg_pnl: float
+
+
+def aggregate_by_symbol(round_trips: list[RoundTrip]) -> list[SymbolPerformance]:
+    """Groups already-computed round trips by symbol. Pure function so it's
+    testable without a database, and so callers that already have the round
+    trips in hand (e.g. to also list them) don't pay for computing them twice.
+    """
+    by_symbol: dict[str, list[float]] = {}
+    for rt in round_trips:
+        by_symbol.setdefault(rt["symbol"], []).append(rt["realized_pnl"])
+
+    results: list[SymbolPerformance] = []
+    for symbol, pnls in by_symbol.items():
+        wins = sum(1 for p in pnls if p > 0)
+        losses = sum(1 for p in pnls if p < 0)
+        total_pnl = sum(pnls)
+        results.append(
+            SymbolPerformance(
+                symbol=symbol,
+                trade_count=len(pnls),
+                wins=wins,
+                losses=losses,
+                win_rate=round(wins / len(pnls) * 100, 2) if pnls else 0.0,
+                total_pnl=round(total_pnl, 2),
+                avg_pnl=round(total_pnl / len(pnls), 2) if pnls else 0.0,
+            )
+        )
+
+    results.sort(key=lambda r: r["total_pnl"], reverse=True)
+    return results

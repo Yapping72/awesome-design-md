@@ -102,6 +102,9 @@ trade-journal/
 - **Equity curve**: cumulative realized net P&L over time as an area
   chart on the dashboard (`GET /api/pnl/equity-curve`), a running sum
   over the same daily P&L used by the calendar view.
+- **Symbol performance**: round trips grouped by symbol — trade count,
+  win/loss split, win rate, avg P&L, total P&L — ranked by total P&L
+  (`GET /api/trades/by-symbol`), shown as a table on the dashboard.
 
 ## 5. API reference
 
@@ -115,6 +118,7 @@ trade-journal/
 | GET | `/api/trades` | Paginated fills (`page`, `page_size`, `symbol`, `start`, `end`) |
 | GET | `/api/trades/round-trips` | Paginated FIFO-matched round-trip trades (`page`, `page_size`, `symbol`) |
 | PUT | `/api/trades/round-trips/{round_trip_id}/notes` | Upsert notes/tags for a round-trip trade |
+| GET | `/api/trades/by-symbol` | Round trips grouped by symbol, ranked by total P&L |
 | DELETE | `/api/trades` | Clear all imported fills |
 | GET | `/api/portfolio` | Open positions with live quotes, unrealized P&L (USD + SGD) |
 | GET | `/api/fx/usdsgd` | Live USD/SGD rate |
@@ -145,7 +149,7 @@ each tier.
 | 1 | **Round-trip trade view**: FIFO-match opening/closing fills per symbol into discrete entry→exit trades (side, quantity, entry/exit price & time, hold duration, P&L), as a new view alongside the raw fills blotter | done |
 | 2 | **Trade notes & tags**: free-text notes + strategy/setup tags attached to a round-trip trade, editable in the UI | done |
 | 3 | **Equity curve**: cumulative realized P&L over time as a line chart on the dashboard | done |
-| 4 | **Symbol performance breakdown**: P&L, win rate, trade count grouped by symbol | planned |
+| 4 | **Symbol performance breakdown**: P&L, win rate, trade count grouped by symbol | done |
 | 5 | **CSV export**: download trades / round-trips / daily P&L as CSV | planned |
 
 ### Tier 2 — robustness & operability
@@ -167,6 +171,12 @@ each tier.
 
 ## 8. Changelog
 
+- 2026-08-30 — Backlog #4 done: symbol performance breakdown
+  (`services/round_trips.aggregate_by_symbol`, a pure function grouping
+  already-computed round trips so callers don't recompute them; new
+  endpoint `GET /api/trades/by-symbol`; `SymbolPerformanceTable` on the
+  dashboard). 2 new unit tests (33 total passing). Verified against real
+  Postgres and in-browser — ranking matches expected total P&L order.
 - 2026-08-30 — Backlog #3 done: equity curve (`services/pnl.equity_curve`,
   `GET /api/pnl/equity-curve`, `EquityCurveChart` area chart on the
   dashboard). 3 new tests via TestClient+SQLite covering the cumulative

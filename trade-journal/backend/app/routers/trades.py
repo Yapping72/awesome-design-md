@@ -6,7 +6,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from .. import database, models, schemas
-from ..services.round_trips import compute_round_trips
+from ..services.round_trips import aggregate_by_symbol, compute_round_trips
 
 router = APIRouter(prefix="/api/trades", tags=["trades"])
 
@@ -44,6 +44,11 @@ def list_round_trips(
         items.append(schemas.RoundTripOut(**rt, notes=notes, tags=tags))
 
     return schemas.RoundTripsPage(total=total, page=page, page_size=page_size, items=items)
+
+
+@router.get("/by-symbol", response_model=list[schemas.SymbolPerformanceOut])
+def symbol_performance(db: Session = Depends(database.get_db)):
+    return aggregate_by_symbol(compute_round_trips(db))
 
 
 @router.put("/round-trips/{round_trip_id}/notes", response_model=schemas.TradeNoteOut)

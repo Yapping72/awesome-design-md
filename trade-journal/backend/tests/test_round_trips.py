@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from app.services.round_trips import compute_round_trips
+from app.services.round_trips import aggregate_by_symbol, compute_round_trips
 
 
 class FakeExecution:
@@ -139,3 +139,41 @@ def test_round_trip_id_is_stable_and_unique():
     # Recomputing from the same executions must produce the same ids.
     trips_again = compute_round_trips(FakeSession(rows))
     assert [rt["round_trip_id"] for rt in trips_again] == ids
+
+
+def test_aggregate_by_symbol_groups_and_ranks_by_total_pnl():
+    rows = [
+        # AAPL: one win (+448)
+        FakeExecution(1, "AAPL", 100, 185.5, t(0)),
+        FakeExecution(2, "AAPL", -100, 190.0, t(60)),
+        # TSLA: one loss (-252)
+        FakeExecution(3, "TSLA", 50, 240.0, t(0)),
+        FakeExecution(4, "TSLA", -50, 235.0, t(30)),
+        # MSFT: two wins
+        FakeExecution(5, "MSFT", 10, 100.0, t(0)),
+        FakeExecution(6, "MSFT", -10, 110.0, t(10)),
+        FakeExecution(7, "MSFT", 10, 100.0, t(20)),
+        FakeExecution(8, "MSFT", -10, 105.0, t(30)),
+    ]
+    trips = compute_round_trips(FakeSession(rows))
+    perf = aggregate_by_symbol(trips)
+
+    by_symbol = {p["symbol"]: p for p in perf}
+    assert by_symbol["AAPL"]["trade_count"] == 1
+    assert by_symbol["AAPL"]["wins"] == 1
+    assert by_symbol["AAPL"]["losses"] == 0
+    assert by_symbol["AAPL"]["win_rate"] == 100.0
+
+    assert by_symbol["TSLA"]["wins"] == 0
+    assert by_symbol["TSLA"]["losses"] == 1
+    assert by_symbol["TSLA"]["win_rate"] == 0.0
+
+    assert by_symbol["MSFT"]["trade_count"] == 2
+    assert by_symbol["MSFT"]["wins"] == 2
+
+    # Ranked by total P&L descending: AAPL (448) > MSFT (146) > TSLA (-252)
+    assert [p["symbol"] for p in perf] == ["AAPL", "MSFT", "TSLA"]
+
+
+def test_aggregate_by_symbol_empty_input():
+    assert aggregate_by_symbol([]) == []

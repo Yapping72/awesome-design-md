@@ -7,6 +7,7 @@ import type {
   Portfolio,
   RoundTripsPage,
   Summary,
+  SymbolPerformance,
   TradeNote,
   TradesPage,
   UploadResult,
@@ -92,6 +93,10 @@ export function saveRoundTripNotes(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ notes, tags }),
   });
+}
+
+export function getSymbolPerformance(): Promise<SymbolPerformance[]> {
+  return request<SymbolPerformance[]>("/api/trades/by-symbol");
 }
 
 export function getUsdSgdRate(): Promise<FxRate> {

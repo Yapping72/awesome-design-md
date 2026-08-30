@@ -71,6 +71,16 @@ export interface RoundTrip {
   tags: string[];
 }
 
+export interface SymbolPerformance {
+  symbol: string;
+  trade_count: number;
+  wins: number;
+  losses: number;
+  win_rate: number;
+  total_pnl: number;
+  avg_pnl: number;
+}
+
 export interface EquityPoint {
   date: string;
   pnl: number;

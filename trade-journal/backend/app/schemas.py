@@ -63,6 +63,16 @@ class RoundTripsPage(BaseModel):
     items: list[RoundTripOut]
 
 
+class SymbolPerformanceOut(BaseModel):
+    symbol: str
+    trade_count: int
+    wins: int
+    losses: int
+    win_rate: float
+    total_pnl: float
+    avg_pnl: float
+
+
 class UploadResult(BaseModel):
     parsed: int
     inserted: int
