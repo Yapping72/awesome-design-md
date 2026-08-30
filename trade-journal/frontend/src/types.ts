@@ -56,6 +56,7 @@ export interface UploadResult {
 export type AggregationPeriod = "day" | "week" | "month";
 
 export interface RoundTrip {
+  round_trip_id: string;
   symbol: string;
   side: "long" | "short";
   quantity: number;
@@ -66,6 +67,14 @@ export interface RoundTrip {
   commission: number;
   realized_pnl: number;
   hold_seconds: number;
+  notes: string | null;
+  tags: string[];
+}
+
+export interface TradeNote {
+  round_trip_id: string;
+  notes: string | null;
+  tags: string[];
 }
 
 export interface RoundTripsPage {

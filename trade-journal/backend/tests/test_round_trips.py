@@ -123,3 +123,19 @@ def test_flip_through_zero_produces_close_and_new_open():
 def test_no_close_yields_no_round_trips():
     rows = [FakeExecution(1, "SPY", 10, 450.0, t(0))]
     assert compute_round_trips(FakeSession(rows)) == []
+
+
+def test_round_trip_id_is_stable_and_unique():
+    rows = [
+        FakeExecution(1, "NFLX", 5, 100.0, t(0)),
+        FakeExecution(2, "NFLX", 5, 110.0, t(10)),
+        FakeExecution(3, "NFLX", -10, 150.0, t(20)),  # closes both lots
+    ]
+    trips = compute_round_trips(FakeSession(rows))
+    ids = [rt["round_trip_id"] for rt in trips]
+    assert len(ids) == len(set(ids))  # unique per round trip
+    assert ids == ["1:3", "2:3"]  # entry execution id : exit execution id
+
+    # Recomputing from the same executions must produce the same ids.
+    trips_again = compute_round_trips(FakeSession(rows))
+    assert [rt["round_trip_id"] for rt in trips_again] == ids

@@ -338,6 +338,96 @@ th {
   color: var(--red);
 }
 
+.notes-trigger {
+  background: transparent;
+  border: none;
+  padding: 4px 6px;
+  cursor: pointer;
+  text-align: left;
+  max-width: 220px;
+}
+
+.tag-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.tag-pill {
+  background: rgba(88, 166, 255, 0.15);
+  color: var(--accent);
+  border-radius: 4px;
+  padding: 2px 7px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.note-preview {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.note-preview.muted {
+  color: var(--accent);
+}
+
+.note-editor-row td {
+  background: rgba(255, 255, 255, 0.02);
+  padding: 12px 10px;
+}
+
+.note-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 640px;
+}
+
+.note-editor textarea {
+  background: var(--bg);
+  border: 1px solid var(--panel-border);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.note-editor input {
+  background: var(--bg);
+  border: 1px solid var(--panel-border);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+.note-editor-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.note-editor-actions button {
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 12px;
+  cursor: pointer;
+  background: var(--panel-border);
+  color: var(--text);
+}
+
+.note-editor-actions button.primary {
+  background: var(--accent);
+  color: #fff;
+}
+
+.note-editor-actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .filters {
   display: flex;
   gap: 10px;

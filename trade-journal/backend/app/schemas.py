@@ -30,6 +30,7 @@ class TradesPage(BaseModel):
 
 
 class RoundTripOut(BaseModel):
+    round_trip_id: str
     symbol: str
     side: str
     quantity: float
@@ -40,6 +41,19 @@ class RoundTripOut(BaseModel):
     commission: float
     realized_pnl: float
     hold_seconds: float
+    notes: Optional[str] = None
+    tags: list[str] = []
+
+
+class TradeNoteIn(BaseModel):
+    notes: Optional[str] = None
+    tags: list[str] = []
+
+
+class TradeNoteOut(BaseModel):
+    round_trip_id: str
+    notes: Optional[str] = None
+    tags: list[str] = []
 
 
 class RoundTripsPage(BaseModel):

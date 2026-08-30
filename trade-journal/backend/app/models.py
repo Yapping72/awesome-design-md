@@ -28,3 +28,24 @@ class Execution(Base):
     realized_pnl = Column(Float, nullable=False, default=0.0)
     code = Column(String, nullable=True)
     created_at = Column(DateTime, server_default=func.now())
+
+
+class TradeNote(Base):
+    """Journal notes/tags attached to a round-trip trade.
+
+    Round trips aren't stored rows — they're computed on the fly by
+    services/round_trips.py from the executions table (FIFO-matching can
+    shift if fills are re-imported). We key notes on a synthetic,
+    deterministic `round_trip_id` (entry execution id + exit execution id +
+    quantity closed) rather than a surrogate id, so a note stays attached
+    to "the same round trip" across recomputation as long as the underlying
+    fills haven't changed.
+    """
+
+    __tablename__ = "trade_notes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    round_trip_id = Column(String, unique=True, index=True, nullable=False)
+    notes = Column(String, nullable=True)
+    tags = Column(String, nullable=True)  # comma-separated; simple by design
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())

@@ -20,7 +20,7 @@ trade-journal/
 └── docker-compose.yml   postgres + backend + frontend(nginx)
 ```
 
-- **Database**: PostgreSQL. Single table today (`executions`); schema
+- **Database**: PostgreSQL. Tables: `executions`, `trade_notes`; schema
   created via `Base.metadata.create_all()` at backend startup (no
   migrations yet — see backlog).
 - **Auth**: none. Single-user, self-hosted, no login. Out of scope unless
@@ -51,6 +51,16 @@ trade-journal/
 | `code` | string, nullable | IBKR fill code, e.g. "O"/"C" |
 | `created_at` | datetime | |
 
+### `trade_notes` (journal notes/tags for a round-trip trade)
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | int, PK | |
+| `round_trip_id` | string, unique | `"{entry_execution_id}:{exit_execution_id}"` — deterministic, not a surrogate key, since round trips aren't stored rows (see backlog #2) |
+| `notes` | string, nullable | free text |
+| `tags` | string, nullable | comma-separated |
+| `updated_at` | datetime | |
+
 ## 4. Current features
 
 - **Import**: drag-and-drop or file-picker upload of an IBKR Activity
@@ -75,6 +85,13 @@ trade-journal/
   `backend/app/services/round_trips.py` and
   `GET /api/trades/round-trips`. The Trades page defaults to this view,
   with a toggle back to the raw fills blotter for auditing.
+- **Trade notes & tags**: each round trip can carry free-text notes and
+  comma-tags, edited inline in the Round Trips table (click a row's
+  "Notes" cell) and persisted via
+  `PUT /api/trades/round-trips/{round_trip_id}/notes`. Keyed on a
+  deterministic id derived from the entry/exit execution ids, not a
+  surrogate key, since round trips are recomputed on the fly rather than
+  stored.
 - **Open positions**: running weighted-average cost basis per symbol
   computed from imported fills (`backend/app/services/positions.py`),
   enriched with live last price, market value, and unrealized P&L
@@ -93,6 +110,7 @@ trade-journal/
 | GET | `/api/pnl/summary` | Overall summary stats |
 | GET | `/api/trades` | Paginated fills (`page`, `page_size`, `symbol`, `start`, `end`) |
 | GET | `/api/trades/round-trips` | Paginated FIFO-matched round-trip trades (`page`, `page_size`, `symbol`) |
+| PUT | `/api/trades/round-trips/{round_trip_id}/notes` | Upsert notes/tags for a round-trip trade |
 | DELETE | `/api/trades` | Clear all imported fills |
 | GET | `/api/portfolio` | Open positions with live quotes, unrealized P&L (USD + SGD) |
 | GET | `/api/fx/usdsgd` | Live USD/SGD rate |
@@ -107,8 +125,6 @@ Full interactive docs at `/docs` (FastAPI auto-generated).
   "am I up or down on this position right now". Closed-trade history uses
   proper FIFO lot matching instead (`services/round_trips.py`); the two
   are separate calculations for separate questions.
-- Fills are journaled as-is; there's no way to attach notes, tags, or a
-  strategy label to a trade yet. See backlog #2.
 - `DELETE /api/trades` wipes everything — no per-import undo. See backlog #7.
 - Schema managed by `create_all`, not versioned migrations. See backlog #6.
 - Only USD→SGD FX conversion; other currencies pass through unconverted.
@@ -123,7 +139,7 @@ each tier.
 | # | Feature | Status |
 |---|---|---|
 | 1 | **Round-trip trade view**: FIFO-match opening/closing fills per symbol into discrete entry→exit trades (side, quantity, entry/exit price & time, hold duration, P&L), as a new view alongside the raw fills blotter | done |
-| 2 | **Trade notes & tags**: free-text notes + strategy/setup tags attached to a round-trip trade, editable in the UI | planned |
+| 2 | **Trade notes & tags**: free-text notes + strategy/setup tags attached to a round-trip trade, editable in the UI | done |
 | 3 | **Equity curve**: cumulative realized P&L over time as a line chart on the dashboard | planned |
 | 4 | **Symbol performance breakdown**: P&L, win rate, trade count grouped by symbol | planned |
 | 5 | **CSV export**: download trades / round-trips / daily P&L as CSV | planned |
@@ -147,6 +163,13 @@ each tier.
 
 ## 8. Changelog
 
+- 2026-08-30 — Backlog #2 done: trade notes & tags (`trade_notes` table,
+  `PUT /api/trades/round-trips/{id}/notes`, inline editor in the Round
+  Trips table). 5 new backend tests, including an HTTP-level integration
+  test via FastAPI's TestClient against SQLite (29 total passing).
+  Verified against real Postgres and in-browser, including persistence
+  across a page reload. Also modernized the deprecated `@app.on_event`
+  startup hook to a `lifespan` handler while in `main.py`.
 - 2026-08-30 — Backlog #1 done: round-trip trade view (FIFO fill matching,
   `services/round_trips.py`, `GET /api/trades/round-trips`, Trades page
   toggle). 7 new backend unit tests (24 total passing). Verified against

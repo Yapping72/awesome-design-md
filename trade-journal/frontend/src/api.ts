@@ -6,6 +6,7 @@ import type {
   Portfolio,
   RoundTripsPage,
   Summary,
+  TradeNote,
   TradesPage,
   UploadResult,
 } from "./types";
@@ -74,6 +75,18 @@ export function getRoundTrips(params: {
   if (params.pageSize) qs.set("page_size", String(params.pageSize));
   if (params.symbol) qs.set("symbol", params.symbol);
   return request<RoundTripsPage>(`/api/trades/round-trips?${qs.toString()}`);
+}
+
+export function saveRoundTripNotes(
+  roundTripId: string,
+  notes: string,
+  tags: string[]
+): Promise<TradeNote> {
+  return request<TradeNote>(`/api/trades/round-trips/${encodeURIComponent(roundTripId)}/notes`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ notes, tags }),
+  });
 }
 
 export function getUsdSgdRate(): Promise<FxRate> {

@@ -25,6 +25,7 @@ from .. import models
 
 
 class RoundTrip(TypedDict):
+    round_trip_id: str
     symbol: str
     side: str  # "long" | "short"
     quantity: float
@@ -38,13 +39,21 @@ class RoundTrip(TypedDict):
 
 
 class _Lot:
-    __slots__ = ("qty", "price", "time", "commission_per_share")
+    __slots__ = ("qty", "price", "time", "commission_per_share", "execution_id")
 
-    def __init__(self, qty: float, price: float, time: datetime, commission_per_share: float):
+    def __init__(
+        self,
+        qty: float,
+        price: float,
+        time: datetime,
+        commission_per_share: float,
+        execution_id: int,
+    ):
         self.qty = qty
         self.price = price
         self.time = time
         self.commission_per_share = commission_per_share
+        self.execution_id = execution_id
 
 
 def compute_round_trips(db: Session) -> list[RoundTrip]:
@@ -67,7 +76,15 @@ def compute_round_trips(db: Session) -> list[RoundTrip]:
         while remaining_qty != 0:
             opens_new_lot = not queue or (queue[0].qty > 0) == (remaining_qty > 0)
             if opens_new_lot:
-                queue.append(_Lot(remaining_qty, execution.price, execution.trade_datetime, commission_per_share))
+                queue.append(
+                    _Lot(
+                        remaining_qty,
+                        execution.price,
+                        execution.trade_datetime,
+                        commission_per_share,
+                        execution.id,
+                    )
+                )
                 remaining_qty = 0
                 continue
 
@@ -81,6 +98,7 @@ def compute_round_trips(db: Session) -> list[RoundTrip]:
 
             round_trips.append(
                 RoundTrip(
+                    round_trip_id=f"{lot.execution_id}:{execution.id}",
                     symbol=execution.symbol,
                     side=side,
                     quantity=close_qty,

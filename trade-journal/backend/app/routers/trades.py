@@ -11,6 +11,13 @@ from ..services.round_trips import compute_round_trips
 router = APIRouter(prefix="/api/trades", tags=["trades"])
 
 
+def _note_to_out(note: Optional[models.TradeNote]) -> tuple[Optional[str], list[str]]:
+    if note is None:
+        return None, []
+    tags = [t for t in (note.tags or "").split(",") if t]
+    return note.notes, tags
+
+
 @router.get("/round-trips", response_model=schemas.RoundTripsPage)
 def list_round_trips(
     page: int = Query(1, ge=1),
@@ -30,12 +37,40 @@ def list_round_trips(
     start_idx = (page - 1) * page_size
     page_items = round_trips[start_idx : start_idx + page_size]
 
-    return schemas.RoundTripsPage(
-        total=total,
-        page=page,
-        page_size=page_size,
-        items=[schemas.RoundTripOut(**rt) for rt in page_items],
+    notes_by_id = {note.round_trip_id: note for note in db.query(models.TradeNote).all()}
+    items = []
+    for rt in page_items:
+        notes, tags = _note_to_out(notes_by_id.get(rt["round_trip_id"]))
+        items.append(schemas.RoundTripOut(**rt, notes=notes, tags=tags))
+
+    return schemas.RoundTripsPage(total=total, page=page, page_size=page_size, items=items)
+
+
+@router.put("/round-trips/{round_trip_id}/notes", response_model=schemas.TradeNoteOut)
+def upsert_round_trip_notes(
+    round_trip_id: str,
+    payload: schemas.TradeNoteIn,
+    db: Session = Depends(database.get_db),
+):
+    note = (
+        db.query(models.TradeNote)
+        .filter(models.TradeNote.round_trip_id == round_trip_id)
+        .first()
     )
+    notes_text = payload.notes.strip() if payload.notes and payload.notes.strip() else None
+    tags_csv = ",".join(t.strip() for t in payload.tags if t.strip()) or None
+
+    if note is None:
+        note = models.TradeNote(round_trip_id=round_trip_id, notes=notes_text, tags=tags_csv)
+        db.add(note)
+    else:
+        note.notes = notes_text
+        note.tags = tags_csv
+
+    db.commit()
+
+    notes, tags = _note_to_out(note)
+    return schemas.TradeNoteOut(round_trip_id=round_trip_id, notes=notes, tags=tags)
 
 
 @router.get("", response_model=schemas.TradesPage)

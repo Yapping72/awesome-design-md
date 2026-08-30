@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { getRoundTrips } from "../api";
+import { Fragment, useEffect, useState } from "react";
+import { getRoundTrips, saveRoundTripNotes } from "../api";
 import type { RoundTrip } from "../types";
 
 const PAGE_SIZE = 25;
@@ -13,12 +13,66 @@ function formatHoldDuration(seconds: number): string {
   return `${(hours / 24).toFixed(1)}d`;
 }
 
+function NoteEditor({
+  trip,
+  onSaved,
+  onCancel,
+}: {
+  trip: RoundTrip;
+  onSaved: (updated: { notes: string | null; tags: string[] }) => void;
+  onCancel: () => void;
+}) {
+  const [notes, setNotes] = useState(trip.notes ?? "");
+  const [tagsInput, setTagsInput] = useState(trip.tags.join(", "));
+  const [saving, setSaving] = useState(false);
+
+  function handleSave() {
+    const tags = tagsInput
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean);
+    setSaving(true);
+    saveRoundTripNotes(trip.round_trip_id, notes, tags)
+      .then((res) => onSaved({ notes: res.notes, tags: res.tags }))
+      .finally(() => setSaving(false));
+  }
+
+  return (
+    <tr className="note-editor-row">
+      <td colSpan={11}>
+        <div className="note-editor">
+          <textarea
+            placeholder="What was the setup? What went right or wrong?"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={3}
+          />
+          <input
+            placeholder="Tags, comma separated (e.g. breakout, earnings, revenge-trade)"
+            value={tagsInput}
+            onChange={(e) => setTagsInput(e.target.value)}
+          />
+          <div className="note-editor-actions">
+            <button className="primary" onClick={handleSave} disabled={saving}>
+              {saving ? "Saving…" : "Save"}
+            </button>
+            <button onClick={onCancel} disabled={saving}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      </td>
+    </tr>
+  );
+}
+
 export default function RoundTripsTable() {
   const [page, setPage] = useState(1);
   const [symbol, setSymbol] = useState("");
   const [items, setItems] = useState<RoundTrip[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -35,6 +89,13 @@ export default function RoundTripsTable() {
   }, [page, symbol]);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+  function applyLocalUpdate(roundTripId: string, updated: { notes: string | null; tags: string[] }) {
+    setItems((prev) =>
+      prev.map((rt) => (rt.round_trip_id === roundTripId ? { ...rt, ...updated } : rt))
+    );
+    setEditingId(null);
+  }
 
   return (
     <>
@@ -69,26 +130,59 @@ export default function RoundTripsTable() {
                 <th>Hold</th>
                 <th>Commission</th>
                 <th>P&amp;L</th>
+                <th>Notes</th>
               </tr>
             </thead>
             <tbody>
-              {items.map((rt, idx) => (
-                <tr key={`${rt.symbol}-${rt.exit_time}-${idx}`}>
-                  <td>{rt.symbol}</td>
-                  <td>
-                    <span className={`side-badge ${rt.side}`}>{rt.side}</span>
-                  </td>
-                  <td>{rt.quantity}</td>
-                  <td>{new Date(rt.entry_time).toLocaleString()}</td>
-                  <td>{new Date(rt.exit_time).toLocaleString()}</td>
-                  <td>{rt.entry_price.toFixed(2)}</td>
-                  <td>{rt.exit_price.toFixed(2)}</td>
-                  <td>{formatHoldDuration(rt.hold_seconds)}</td>
-                  <td>{rt.commission.toFixed(2)}</td>
-                  <td className={`pnl-cell ${rt.realized_pnl > 0 ? "positive" : rt.realized_pnl < 0 ? "negative" : ""}`}>
-                    {rt.realized_pnl.toFixed(2)}
-                  </td>
-                </tr>
+              {items.map((rt) => (
+                <Fragment key={rt.round_trip_id}>
+                  <tr>
+                    <td>{rt.symbol}</td>
+                    <td>
+                      <span className={`side-badge ${rt.side}`}>{rt.side}</span>
+                    </td>
+                    <td>{rt.quantity}</td>
+                    <td>{new Date(rt.entry_time).toLocaleString()}</td>
+                    <td>{new Date(rt.exit_time).toLocaleString()}</td>
+                    <td>{rt.entry_price.toFixed(2)}</td>
+                    <td>{rt.exit_price.toFixed(2)}</td>
+                    <td>{formatHoldDuration(rt.hold_seconds)}</td>
+                    <td>{rt.commission.toFixed(2)}</td>
+                    <td className={`pnl-cell ${rt.realized_pnl > 0 ? "positive" : rt.realized_pnl < 0 ? "negative" : ""}`}>
+                      {rt.realized_pnl.toFixed(2)}
+                    </td>
+                    <td>
+                      <button
+                        className="notes-trigger"
+                        onClick={() =>
+                          setEditingId(editingId === rt.round_trip_id ? null : rt.round_trip_id)
+                        }
+                      >
+                        {rt.tags.length > 0 ? (
+                          <span className="tag-pills">
+                            {rt.tags.map((tag) => (
+                              <span className="tag-pill" key={tag}>
+                                {tag}
+                              </span>
+                            ))}
+                          </span>
+                        ) : rt.notes ? (
+                          <span className="note-preview">{rt.notes.slice(0, 40)}</span>
+                        ) : (
+                          <span className="note-preview muted">+ Add note</span>
+                        )}
+                      </button>
+                    </td>
+                  </tr>
+                  {editingId === rt.round_trip_id && (
+                    <NoteEditor
+                      key={`${rt.round_trip_id}-editor`}
+                      trip={rt}
+                      onSaved={(updated) => applyLocalUpdate(rt.round_trip_id, updated)}
+                      onCancel={() => setEditingId(null)}
+                    />
+                  )}
+                </Fragment>
               ))}
             </tbody>
           </table>
