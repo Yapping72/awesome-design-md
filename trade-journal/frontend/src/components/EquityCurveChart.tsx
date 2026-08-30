@@ -2,10 +2,12 @@ import { useEffect, useState } from "react";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { getEquityCurve } from "../api";
 import type { EquityPoint } from "../types";
+import { useChartColors } from "../useChartColors";
 
 export default function EquityCurveChart({ refreshKey }: { refreshKey: number }) {
   const [data, setData] = useState<EquityPoint[]>([]);
   const [loading, setLoading] = useState(true);
+  const colors = useChartColors();
 
   useEffect(() => {
     setLoading(true);
@@ -16,7 +18,7 @@ export default function EquityCurveChart({ refreshKey }: { refreshKey: number })
   }, [refreshKey]);
 
   const finalValue = data.length > 0 ? data[data.length - 1].cumulative_pnl : 0;
-  const lineColor = finalValue >= 0 ? "#3fb950" : "#f85149";
+  const lineColor = finalValue >= 0 ? colors.green : colors.red;
 
   return (
     <div className="panel">
@@ -35,19 +37,19 @@ export default function EquityCurveChart({ refreshKey }: { refreshKey: number })
             </defs>
             <XAxis
               dataKey="date"
-              tick={{ fill: "#8b949e", fontSize: 11 }}
+              tick={{ fill: colors.textDim, fontSize: 11 }}
               tickFormatter={(v: string) => v.slice(5)}
-              axisLine={{ stroke: "#262c36" }}
+              axisLine={{ stroke: colors.panelBorder }}
               tickLine={false}
             />
             <YAxis
-              tick={{ fill: "#8b949e", fontSize: 11 }}
-              axisLine={{ stroke: "#262c36" }}
+              tick={{ fill: colors.textDim, fontSize: 11 }}
+              axisLine={{ stroke: colors.panelBorder }}
               tickLine={false}
             />
             <Tooltip
-              contentStyle={{ background: "#161b22", border: "1px solid #262c36" }}
-              labelStyle={{ color: "#e6edf3" }}
+              contentStyle={{ background: colors.panel, border: `1px solid ${colors.panelBorder}` }}
+              labelStyle={{ color: colors.text }}
               formatter={(value: number) => [`$${value.toFixed(2)}`, "Cumulative P&L"]}
             />
             <Area

@@ -126,6 +126,13 @@ reattributed to a later, overlapping upload.
 - **Live FX**: USD/SGD rate ticker in the header
   (`GET /api/fx/usdsgd`), and portfolio totals also shown converted to
   SGD.
+- **Light/dark theme toggle**: sun/moon button in the header
+  (`ThemeToggle`) flips a `data-theme` attribute on `<html>`, backed by a
+  full light CSS palette in `index.css` and persisted to `localStorage`
+  (applied before first paint in `main.tsx` to avoid a flash). Chart
+  colors (recharts renders `fill`/`stroke` as literal SVG attributes, not
+  through the CSS cascade) come from `useChartColors()`, which reads the
+  resolved CSS custom properties and recomputes on a `themechange` event.
 - **Equity curve**: cumulative realized net P&L over time as an area
   chart on the dashboard (`GET /api/pnl/equity-curve`), a running sum
   over the same daily P&L used by the calendar view.
@@ -200,12 +207,31 @@ each tier.
 
 | # | Feature | Status |
 |---|---|---|
-| 10 | Light theme toggle (dark exists today) | planned |
+| 10 | Light theme toggle (dark exists today) | done |
 | 11 | Docker Compose healthchecks for backend/frontend, runtime-configurable frontend API URL (currently baked in at image build time) | planned |
 | 12 | Mobile-responsive layout pass | planned |
 
 ## 8. Changelog
 
+- 2026-08-30 — Backlog #10 done: light theme toggle. Added a full light
+  palette as `:root[data-theme="light"]` overrides in `index.css`
+  (`--bg`/`--panel`/`--text`/etc. all redefined; the dark palette stays
+  the `:root` default). `ThemeToggle` flips `document.documentElement`'s
+  `data-theme` attribute and persists the choice to `localStorage`;
+  `main.tsx` applies a saved preference synchronously before the first
+  React render to avoid a dark-then-light flash. Discovered along the way
+  that recharts renders axis/tooltip/bar colors as literal SVG attributes
+  rather than through the CSS cascade, so `var(--text-dim)` etc. wouldn't
+  have worked there — added `useChartColors()` (reads resolved custom
+  property values via `getComputedStyle`, re-reads on a `themechange`
+  event `ThemeToggle` dispatches) and switched `AggregationChart` and
+  `EquityCurveChart` to use it instead of hardcoded dark-only hex values.
+  Also removed a stray `color-scheme: dark` rule hardcoded onto date
+  inputs that would have forced a dark date-picker even in light mode.
+  Verified in-browser: toggled themes, confirmed persistence across a
+  full page reload with no flash, and checked both the dashboard charts
+  and the Trades page tables (tag pills, side badges, colored P&L cells)
+  render legibly in both themes.
 - 2026-08-30 — Backlog #7 done, completing Tier 2: import batches. New
   `upload_batches` table and a nullable `executions.batch_id` FK — the
   first real schema change to go through Alembic (migration

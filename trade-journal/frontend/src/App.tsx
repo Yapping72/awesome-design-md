@@ -1,5 +1,6 @@
 import { useState } from "react";
 import FxTicker from "./components/FxTicker";
+import ThemeToggle from "./components/ThemeToggle";
 import Dashboard from "./pages/Dashboard";
 import TradesPage from "./pages/Trades";
 
@@ -18,6 +19,7 @@ export default function App() {
         </div>
         <div className="header-right">
           <FxTicker />
+          <ThemeToggle />
           <nav className="tabs">
             <button
               className={tab === "dashboard" ? "active" : ""}

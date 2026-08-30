@@ -10,6 +10,7 @@ import {
 } from "recharts";
 import { exportUrl, getAggregate } from "../api";
 import type { AggregationPeriod, PeriodPnl } from "../types";
+import { useChartColors } from "../useChartColors";
 
 const PERIODS: { value: AggregationPeriod; label: string }[] = [
   { value: "day", label: "Day" },
@@ -21,6 +22,7 @@ export default function AggregationChart({ refreshKey }: { refreshKey: number })
   const [period, setPeriod] = useState<AggregationPeriod>("day");
   const [data, setData] = useState<PeriodPnl[]>([]);
   const [loading, setLoading] = useState(true);
+  const colors = useChartColors();
 
   useEffect(() => {
     setLoading(true);
@@ -57,26 +59,26 @@ export default function AggregationChart({ refreshKey }: { refreshKey: number })
           <BarChart data={data}>
             <XAxis
               dataKey="period"
-              tick={{ fill: "#8b949e", fontSize: 11 }}
+              tick={{ fill: colors.textDim, fontSize: 11 }}
               tickFormatter={(v: string) => v.slice(0, 10)}
-              axisLine={{ stroke: "#262c36" }}
+              axisLine={{ stroke: colors.panelBorder }}
               tickLine={false}
             />
             <YAxis
-              tick={{ fill: "#8b949e", fontSize: 11 }}
-              axisLine={{ stroke: "#262c36" }}
+              tick={{ fill: colors.textDim, fontSize: 11 }}
+              axisLine={{ stroke: colors.panelBorder }}
               tickLine={false}
             />
             <Tooltip
-              contentStyle={{ background: "#161b22", border: "1px solid #262c36" }}
-              labelStyle={{ color: "#e6edf3" }}
+              contentStyle={{ background: colors.panel, border: `1px solid ${colors.panelBorder}` }}
+              labelStyle={{ color: colors.text }}
               formatter={(value: number) => [`$${value.toFixed(2)}`, "P&L"]}
             />
             <Bar dataKey="pnl" radius={[3, 3, 0, 0]}>
               {data.map((entry) => (
                 <Cell
                   key={entry.period}
-                  fill={entry.pnl >= 0 ? "#3fb950" : "#f85149"}
+                  fill={entry.pnl >= 0 ? colors.green : colors.red}
                 />
               ))}
             </Bar>
