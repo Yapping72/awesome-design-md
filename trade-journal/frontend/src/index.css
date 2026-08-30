@@ -117,6 +117,28 @@ nav.tabs button.active {
   margin: 0 0 14px;
 }
 
+.panel-header-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.panel-header-row h2 {
+  margin: 0 0 14px;
+}
+
+.export-link {
+  font-size: 12px;
+  color: var(--accent);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.export-link:hover {
+  text-decoration: underline;
+}
+
 .upload-zone {
   border: 1.5px dashed var(--panel-border);
   border-radius: 8px;

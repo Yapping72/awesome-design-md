@@ -8,7 +8,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { getAggregate } from "../api";
+import { exportUrl, getAggregate } from "../api";
 import type { AggregationPeriod, PeriodPnl } from "../types";
 
 const PERIODS: { value: AggregationPeriod; label: string }[] = [
@@ -32,7 +32,12 @@ export default function AggregationChart({ refreshKey }: { refreshKey: number })
 
   return (
     <div className="panel">
-      <h2>P&amp;L by {PERIODS.find((p) => p.value === period)?.label}</h2>
+      <div className="panel-header-row">
+        <h2>P&amp;L by {PERIODS.find((p) => p.value === period)?.label}</h2>
+        <a className="export-link" href={exportUrl("/api/pnl/export")}>
+          Export Daily P&amp;L CSV
+        </a>
+      </div>
       <div className="period-toggle">
         {PERIODS.map((p) => (
           <button

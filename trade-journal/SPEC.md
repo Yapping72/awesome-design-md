@@ -105,6 +105,11 @@ trade-journal/
 - **Symbol performance**: round trips grouped by symbol — trade count,
   win/loss split, win rate, avg P&L, total P&L — ranked by total P&L
   (`GET /api/trades/by-symbol`), shown as a table on the dashboard.
+- **CSV export**: raw fills, round trips (with notes/tags), and daily P&L
+  can each be downloaded as CSV (`services/csv_export.py`), respecting
+  the same filters as their JSON counterparts. Linked from the Trades
+  page (toggles between fills/round-trips export) and the dashboard's
+  aggregation panel.
 
 ## 5. API reference
 
@@ -119,6 +124,9 @@ trade-journal/
 | GET | `/api/trades/round-trips` | Paginated FIFO-matched round-trip trades (`page`, `page_size`, `symbol`) |
 | PUT | `/api/trades/round-trips/{round_trip_id}/notes` | Upsert notes/tags for a round-trip trade |
 | GET | `/api/trades/by-symbol` | Round trips grouped by symbol, ranked by total P&L |
+| GET | `/api/trades/export` | Raw fills as CSV (`symbol`, `start`, `end`) |
+| GET | `/api/trades/round-trips/export` | Round trips as CSV, with notes/tags (`symbol`) |
+| GET | `/api/pnl/export` | Daily P&L as CSV (`start`, `end`) |
 | DELETE | `/api/trades` | Clear all imported fills |
 | GET | `/api/portfolio` | Open positions with live quotes, unrealized P&L (USD + SGD) |
 | GET | `/api/fx/usdsgd` | Live USD/SGD rate |
@@ -150,7 +158,7 @@ each tier.
 | 2 | **Trade notes & tags**: free-text notes + strategy/setup tags attached to a round-trip trade, editable in the UI | done |
 | 3 | **Equity curve**: cumulative realized P&L over time as a line chart on the dashboard | done |
 | 4 | **Symbol performance breakdown**: P&L, win rate, trade count grouped by symbol | done |
-| 5 | **CSV export**: download trades / round-trips / daily P&L as CSV | planned |
+| 5 | **CSV export**: download trades / round-trips / daily P&L as CSV | done |
 
 ### Tier 2 — robustness & operability
 
@@ -171,6 +179,15 @@ each tier.
 
 ## 8. Changelog
 
+- 2026-08-30 — Backlog #5 done, completing Tier 1: CSV export
+  (`services/csv_export.py`; `GET /api/trades/export`,
+  `GET /api/trades/round-trips/export`, `GET /api/pnl/export`; export
+  links on the Trades page and dashboard aggregation panel using plain
+  `<a href>` downloads via the server's `Content-Disposition` header, no
+  client-side blob handling needed). 4 new tests (37 total passing).
+  Verified against real Postgres and via real browser downloads
+  (Playwright), confirming correct filenames and CSV content for all
+  three exports.
 - 2026-08-30 — Backlog #4 done: symbol performance breakdown
   (`services/round_trips.aggregate_by_symbol`, a pure function grouping
   already-computed round trips so callers don't recompute them; new

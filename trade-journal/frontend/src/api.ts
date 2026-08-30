@@ -15,6 +15,12 @@ import type {
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
+// CSV exports are plain GET downloads (the server sets Content-Disposition),
+// so components link straight to these URLs rather than fetching them.
+export function exportUrl(path: string): string {
+  return `${API_BASE}${path}`;
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, init);
   if (!res.ok) {

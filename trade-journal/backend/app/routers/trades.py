@@ -2,13 +2,23 @@ from datetime import date
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
+from fastapi.responses import Response
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from .. import database, models, schemas
+from ..services.csv_export import rows_to_csv
 from ..services.round_trips import aggregate_by_symbol, compute_round_trips
 
 router = APIRouter(prefix="/api/trades", tags=["trades"])
+
+
+def _csv_response(csv_body: str, filename: str) -> Response:
+    return Response(
+        content=csv_body,
+        media_type="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 def _note_to_out(note: Optional[models.TradeNote]) -> tuple[Optional[str], list[str]]:
@@ -51,6 +61,30 @@ def symbol_performance(db: Session = Depends(database.get_db)):
     return aggregate_by_symbol(compute_round_trips(db))
 
 
+@router.get("/round-trips/export")
+def export_round_trips(symbol: Optional[str] = None, db: Session = Depends(database.get_db)):
+    round_trips = compute_round_trips(db)
+    if symbol:
+        needle = symbol.lower()
+        round_trips = [rt for rt in round_trips if needle in rt["symbol"].lower()]
+    round_trips.sort(key=lambda rt: rt["exit_time"], reverse=True)
+
+    notes_by_id = {note.round_trip_id: note for note in db.query(models.TradeNote).all()}
+    rows = []
+    for rt in round_trips:
+        notes, tags = _note_to_out(notes_by_id.get(rt["round_trip_id"]))
+        rows.append({**rt, "notes": notes or "", "tags": "|".join(tags)})
+
+    csv_body = rows_to_csv(
+        [
+            "symbol", "side", "quantity", "entry_time", "exit_time", "entry_price",
+            "exit_price", "commission", "realized_pnl", "hold_seconds", "tags", "notes",
+        ],
+        rows,
+    )
+    return _csv_response(csv_body, "round_trips.csv")
+
+
 @router.put("/round-trips/{round_trip_id}/notes", response_model=schemas.TradeNoteOut)
 def upsert_round_trip_notes(
     round_trip_id: str,
@@ -76,6 +110,48 @@ def upsert_round_trip_notes(
 
     notes, tags = _note_to_out(note)
     return schemas.TradeNoteOut(round_trip_id=round_trip_id, notes=notes, tags=tags)
+
+
+@router.get("/export")
+def export_trades(
+    symbol: Optional[str] = None,
+    start: Optional[date] = None,
+    end: Optional[date] = None,
+    db: Session = Depends(database.get_db),
+):
+    q = db.query(models.Execution)
+    if symbol:
+        q = q.filter(models.Execution.symbol.ilike(f"%{symbol}%"))
+    if start:
+        q = q.filter(models.Execution.trade_date >= start)
+    if end:
+        q = q.filter(models.Execution.trade_date <= end)
+    rows = q.order_by(models.Execution.trade_datetime.desc()).all()
+
+    csv_rows = [
+        {
+            "trade_datetime": row.trade_datetime,
+            "symbol": row.symbol,
+            "asset_category": row.asset_category,
+            "currency": row.currency,
+            "quantity": row.quantity,
+            "price": row.price,
+            "proceeds": row.proceeds,
+            "commission": row.commission,
+            "realized_pnl": row.realized_pnl,
+            "net_pnl": round((row.realized_pnl or 0) + (row.commission or 0), 2),
+            "code": row.code,
+        }
+        for row in rows
+    ]
+    csv_body = rows_to_csv(
+        [
+            "trade_datetime", "symbol", "asset_category", "currency", "quantity", "price",
+            "proceeds", "commission", "realized_pnl", "net_pnl", "code",
+        ],
+        csv_rows,
+    )
+    return _csv_response(csv_body, "trade_fills.csv")
 
 
 @router.get("", response_model=schemas.TradesPage)
