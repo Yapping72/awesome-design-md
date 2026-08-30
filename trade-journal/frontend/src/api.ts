@@ -65,15 +65,25 @@ export function getEquityCurve(): Promise<EquityPoint[]> {
   return request<EquityPoint[]>("/api/pnl/equity-curve");
 }
 
+export type SortDir = "asc" | "desc";
+
 export function getTrades(params: {
   page?: number;
   pageSize?: number;
   symbol?: string;
+  start?: string;
+  end?: string;
+  sortBy?: string;
+  sortDir?: SortDir;
 }): Promise<TradesPage> {
   const qs = new URLSearchParams();
   if (params.page) qs.set("page", String(params.page));
   if (params.pageSize) qs.set("page_size", String(params.pageSize));
   if (params.symbol) qs.set("symbol", params.symbol);
+  if (params.start) qs.set("start", params.start);
+  if (params.end) qs.set("end", params.end);
+  if (params.sortBy) qs.set("sort_by", params.sortBy);
+  if (params.sortDir) qs.set("sort_dir", params.sortDir);
   return request<TradesPage>(`/api/trades?${qs.toString()}`);
 }
 
@@ -81,11 +91,19 @@ export function getRoundTrips(params: {
   page?: number;
   pageSize?: number;
   symbol?: string;
+  start?: string;
+  end?: string;
+  sortBy?: string;
+  sortDir?: SortDir;
 }): Promise<RoundTripsPage> {
   const qs = new URLSearchParams();
   if (params.page) qs.set("page", String(params.page));
   if (params.pageSize) qs.set("page_size", String(params.pageSize));
   if (params.symbol) qs.set("symbol", params.symbol);
+  if (params.start) qs.set("start", params.start);
+  if (params.end) qs.set("end", params.end);
+  if (params.sortBy) qs.set("sort_by", params.sortBy);
+  if (params.sortDir) qs.set("sort_dir", params.sortDir);
   return request<RoundTripsPage>(`/api/trades/round-trips?${qs.toString()}`);
 }
 

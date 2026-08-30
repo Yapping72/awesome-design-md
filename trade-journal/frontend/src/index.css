@@ -452,6 +452,7 @@ th {
 
 .filters {
   display: flex;
+  align-items: center;
   gap: 10px;
   margin-bottom: 14px;
 }
@@ -463,6 +464,36 @@ th {
   padding: 6px 10px;
   border-radius: 6px;
   font-size: 13px;
+}
+
+.filters input[type="date"] {
+  color-scheme: dark;
+}
+
+.filters-sep {
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+th.sortable-th {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+th.sortable-th:hover {
+  color: var(--text);
+}
+
+.sort-arrow {
+  display: inline-block;
+  margin-left: 4px;
+  font-size: 9px;
+  color: var(--text-dim);
+}
+
+.sort-arrow.active {
+  color: var(--accent);
 }
 
 .pagination {

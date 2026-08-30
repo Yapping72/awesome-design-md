@@ -88,7 +88,10 @@ trade-journal/
   hold duration, commission, P&L) via
   `backend/app/services/round_trips.py` and
   `GET /api/trades/round-trips`. The Trades page defaults to this view,
-  with a toggle back to the raw fills blotter for auditing.
+  with a toggle back to the raw fills blotter for auditing. Both tables
+  support a symbol filter, a date-range filter (round trips filter on
+  exit date), and click-to-sort column headers (`SortableTh`), all
+  server-side.
 - **Trade notes & tags**: each round trip can carry free-text notes and
   comma-tags, edited inline in the Round Trips table (click a row's
   "Notes" cell) and persisted via
@@ -124,8 +127,8 @@ trade-journal/
 | GET | `/api/pnl/aggregate` | P&L by `period=day\|week\|month`, optional `start`/`end` |
 | GET | `/api/pnl/summary` | Overall summary stats |
 | GET | `/api/pnl/equity-curve` | Cumulative realized P&L over time, optional `start`/`end` |
-| GET | `/api/trades` | Paginated fills (`page`, `page_size`, `symbol`, `start`, `end`) |
-| GET | `/api/trades/round-trips` | Paginated FIFO-matched round-trip trades (`page`, `page_size`, `symbol`) |
+| GET | `/api/trades` | Paginated fills (`page`, `page_size`, `symbol`, `start`, `end`, `sort_by`, `sort_dir`) |
+| GET | `/api/trades/round-trips` | Paginated FIFO-matched round-trip trades (`page`, `page_size`, `symbol`, `start`, `end`, `sort_by`, `sort_dir`) |
 | PUT | `/api/trades/round-trips/{round_trip_id}/notes` | Upsert notes/tags for a round-trip trade |
 | GET | `/api/trades/by-symbol` | Round trips grouped by symbol, ranked by total P&L |
 | GET | `/api/trades/export` | Raw fills as CSV (`symbol`, `start`, `end`) |
@@ -170,7 +173,7 @@ each tier.
 |---|---|---|
 | 6 | **Alembic migrations** replacing `create_all` | planned |
 | 7 | **Import batches**: track each upload as a batch, list upload history, allow deleting a single batch instead of only "delete everything" | planned |
-| 8 | **Trades table sorting & date-range filter** in the UI | planned |
+| 8 | **Trades table sorting & date-range filter** in the UI | done |
 | 9 | **CI**: GitHub Actions running backend pytest + frontend typecheck/build on push | done |
 
 ### Tier 3 — polish
@@ -183,6 +186,16 @@ each tier.
 
 ## 8. Changelog
 
+- 2026-08-30 — Backlog #8 done: sorting & date-range filter for both the
+  Trades and Round Trips tables. Backend: whitelisted `sort_by`/`sort_dir`
+  query params (SQL `ORDER BY` for fills, in-memory sort for round trips
+  since those are computed, not queried) plus an exit-date range filter
+  on round trips (fills already had one). Frontend: a shared `SortableTh`
+  component (click a header to sort, click again to flip direction) and
+  date-range `<input type="date">` pairs on both tables. 7 new tests
+  (44 total passing). Verified against real Postgres and in-browser —
+  sort direction toggling and the date filter narrowing to the expected
+  single row both confirmed visually.
 - 2026-08-30 — Backlog #9 done: CI
   (`.github/workflows/trade-journal-ci.yml`), path-scoped to
   `trade-journal/**` so it doesn't run on unrelated changes to this

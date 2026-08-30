@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useState } from "react";
-import { getRoundTrips, saveRoundTripNotes } from "../api";
+import { getRoundTrips, saveRoundTripNotes, type SortDir } from "../api";
 import type { RoundTrip } from "../types";
+import SortableTh from "./SortableTh";
 
 const PAGE_SIZE = 25;
 
@@ -69,6 +70,10 @@ function NoteEditor({
 export default function RoundTripsTable() {
   const [page, setPage] = useState(1);
   const [symbol, setSymbol] = useState("");
+  const [start, setStart] = useState("");
+  const [end, setEnd] = useState("");
+  const [sortBy, setSortBy] = useState("exit_time");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [items, setItems] = useState<RoundTrip[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -76,7 +81,15 @@ export default function RoundTripsTable() {
 
   useEffect(() => {
     setLoading(true);
-    getRoundTrips({ page, pageSize: PAGE_SIZE, symbol: symbol || undefined })
+    getRoundTrips({
+      page,
+      pageSize: PAGE_SIZE,
+      symbol: symbol || undefined,
+      start: start || undefined,
+      end: end || undefined,
+      sortBy,
+      sortDir,
+    })
       .then((res) => {
         setItems(res.items);
         setTotal(res.total);
@@ -86,7 +99,17 @@ export default function RoundTripsTable() {
         setTotal(0);
       })
       .finally(() => setLoading(false));
-  }, [page, symbol]);
+  }, [page, symbol, start, end, sortBy, sortDir]);
+
+  function handleSort(key: string) {
+    if (key === sortBy) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortBy(key);
+      setSortDir("desc");
+    }
+    setPage(1);
+  }
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
@@ -108,6 +131,23 @@ export default function RoundTripsTable() {
             setPage(1);
           }}
         />
+        <input
+          type="date"
+          value={start}
+          onChange={(e) => {
+            setStart(e.target.value);
+            setPage(1);
+          }}
+        />
+        <span className="filters-sep">to</span>
+        <input
+          type="date"
+          value={end}
+          onChange={(e) => {
+            setEnd(e.target.value);
+            setPage(1);
+          }}
+        />
       </div>
       {!loading && items.length === 0 && (
         <div className="empty-state">
@@ -120,16 +160,16 @@ export default function RoundTripsTable() {
           <table>
             <thead>
               <tr>
-                <th>Symbol</th>
-                <th>Side</th>
-                <th>Qty</th>
-                <th>Entry</th>
-                <th>Exit</th>
-                <th>Entry Price</th>
-                <th>Exit Price</th>
-                <th>Hold</th>
-                <th>Commission</th>
-                <th>P&amp;L</th>
+                <SortableTh label="Symbol" sortKey="symbol" activeSortBy={sortBy} activeSortDir={sortDir} onSort={handleSort} />
+                <SortableTh label="Side" sortKey="side" activeSortBy={sortBy} activeSortDir={sortDir} onSort={handleSort} />
+                <SortableTh label="Qty" sortKey="quantity" activeSortBy={sortBy} activeSortDir={sortDir} onSort={handleSort} />
+                <SortableTh label="Entry" sortKey="entry_time" activeSortBy={sortBy} activeSortDir={sortDir} onSort={handleSort} />
+                <SortableTh label="Exit" sortKey="exit_time" activeSortBy={sortBy} activeSortDir={sortDir} onSort={handleSort} />
+                <SortableTh label="Entry Price" sortKey="entry_price" activeSortBy={sortBy} activeSortDir={sortDir} onSort={handleSort} />
+                <SortableTh label="Exit Price" sortKey="exit_price" activeSortBy={sortBy} activeSortDir={sortDir} onSort={handleSort} />
+                <SortableTh label="Hold" sortKey="hold_seconds" activeSortBy={sortBy} activeSortDir={sortDir} onSort={handleSort} />
+                <SortableTh label="Commission" sortKey="commission" activeSortBy={sortBy} activeSortDir={sortDir} onSort={handleSort} />
+                <SortableTh label="P&L" sortKey="realized_pnl" activeSortBy={sortBy} activeSortDir={sortDir} onSort={handleSort} />
                 <th>Notes</th>
               </tr>
             </thead>

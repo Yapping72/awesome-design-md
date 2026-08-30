@@ -1,5 +1,5 @@
 from datetime import date
-from typing import Optional
+from typing import Literal, Optional
 
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import Response
@@ -8,9 +8,29 @@ from sqlalchemy.orm import Session
 
 from .. import database, models, schemas
 from ..services.csv_export import rows_to_csv
+from ..services.pnl import NET_PNL_EXPR
 from ..services.round_trips import aggregate_by_symbol, compute_round_trips
 
 router = APIRouter(prefix="/api/trades", tags=["trades"])
+
+FillSortBy = Literal[
+    "trade_datetime", "symbol", "quantity", "price", "commission", "realized_pnl", "net_pnl"
+]
+RoundTripSortBy = Literal[
+    "symbol", "side", "quantity", "entry_time", "exit_time",
+    "entry_price", "exit_price", "commission", "realized_pnl", "hold_seconds",
+]
+SortDir = Literal["asc", "desc"]
+
+_FILL_SORT_COLUMNS = {
+    "trade_datetime": models.Execution.trade_datetime,
+    "symbol": models.Execution.symbol,
+    "quantity": models.Execution.quantity,
+    "price": models.Execution.price,
+    "commission": models.Execution.commission,
+    "realized_pnl": models.Execution.realized_pnl,
+    "net_pnl": NET_PNL_EXPR,
+}
 
 
 def _csv_response(csv_body: str, filename: str) -> Response:
@@ -33,15 +53,22 @@ def list_round_trips(
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=500),
     symbol: Optional[str] = None,
+    start: Optional[date] = None,
+    end: Optional[date] = None,
+    sort_by: RoundTripSortBy = "exit_time",
+    sort_dir: SortDir = "desc",
     db: Session = Depends(database.get_db),
 ):
     round_trips = compute_round_trips(db)
     if symbol:
         needle = symbol.lower()
         round_trips = [rt for rt in round_trips if needle in rt["symbol"].lower()]
+    if start:
+        round_trips = [rt for rt in round_trips if rt["exit_time"].date() >= start]
+    if end:
+        round_trips = [rt for rt in round_trips if rt["exit_time"].date() <= end]
 
-    # Most recent exit first, matching the raw-fills blotter's ordering.
-    round_trips.sort(key=lambda rt: rt["exit_time"], reverse=True)
+    round_trips.sort(key=lambda rt: rt[sort_by], reverse=(sort_dir == "desc"))
 
     total = len(round_trips)
     start_idx = (page - 1) * page_size
@@ -161,6 +188,8 @@ def list_trades(
     symbol: Optional[str] = None,
     start: Optional[date] = None,
     end: Optional[date] = None,
+    sort_by: FillSortBy = "trade_datetime",
+    sort_dir: SortDir = "desc",
     db: Session = Depends(database.get_db),
 ):
     q = db.query(models.Execution)
@@ -173,12 +202,9 @@ def list_trades(
 
     total = q.with_entities(func.count(models.Execution.id)).scalar() or 0
 
-    rows = (
-        q.order_by(models.Execution.trade_datetime.desc())
-        .offset((page - 1) * page_size)
-        .limit(page_size)
-        .all()
-    )
+    column = _FILL_SORT_COLUMNS[sort_by]
+    order = column.asc() if sort_dir == "asc" else column.desc()
+    rows = q.order_by(order).offset((page - 1) * page_size).limit(page_size).all()
 
     items = [
         schemas.TradeOut(
