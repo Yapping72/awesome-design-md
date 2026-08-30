@@ -28,8 +28,7 @@ export default function TradesTable() {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
-    <div className="panel">
-      <h2>Trades</h2>
+    <>
       <div className="filters">
         <input
           placeholder="Filter by symbol…"
@@ -90,6 +89,6 @@ export default function TradesTable() {
           </div>
         </>
       )}
-    </div>
+    </>
   );
 }

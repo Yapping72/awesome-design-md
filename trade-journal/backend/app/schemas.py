@@ -29,6 +29,26 @@ class TradesPage(BaseModel):
     items: list[TradeOut]
 
 
+class RoundTripOut(BaseModel):
+    symbol: str
+    side: str
+    quantity: float
+    entry_time: datetime
+    exit_time: datetime
+    entry_price: float
+    exit_price: float
+    commission: float
+    realized_pnl: float
+    hold_seconds: float
+
+
+class RoundTripsPage(BaseModel):
+    total: int
+    page: int
+    page_size: int
+    items: list[RoundTripOut]
+
+
 class UploadResult(BaseModel):
     parsed: int
     inserted: int

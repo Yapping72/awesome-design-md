@@ -69,6 +69,12 @@ trade-journal/
   best/worst day (`GET /api/pnl/summary`).
 - **Trade blotter**: paginated, symbol-filterable list of raw fills
   (`GET /api/trades`).
+- **Round-trip trades**: raw fills are FIFO-matched per symbol into
+  discrete entry→exit trades (side, quantity, entry/exit price & time,
+  hold duration, commission, P&L) via
+  `backend/app/services/round_trips.py` and
+  `GET /api/trades/round-trips`. The Trades page defaults to this view,
+  with a toggle back to the raw fills blotter for auditing.
 - **Open positions**: running weighted-average cost basis per symbol
   computed from imported fills (`backend/app/services/positions.py`),
   enriched with live last price, market value, and unrealized P&L
@@ -86,6 +92,7 @@ trade-journal/
 | GET | `/api/pnl/aggregate` | P&L by `period=day\|week\|month`, optional `start`/`end` |
 | GET | `/api/pnl/summary` | Overall summary stats |
 | GET | `/api/trades` | Paginated fills (`page`, `page_size`, `symbol`, `start`, `end`) |
+| GET | `/api/trades/round-trips` | Paginated FIFO-matched round-trip trades (`page`, `page_size`, `symbol`) |
 | DELETE | `/api/trades` | Clear all imported fills |
 | GET | `/api/portfolio` | Open positions with live quotes, unrealized P&L (USD + SGD) |
 | GET | `/api/fx/usdsgd` | Live USD/SGD rate |
@@ -95,10 +102,11 @@ Full interactive docs at `/docs` (FastAPI auto-generated).
 ## 6. Known limitations (by design, for now)
 
 - No auth / multi-user support — single self-hosted instance.
-- Unrealized P&L uses weighted-average cost, not FIFO lot tracking — fine
-  for a single "am I up or down on this position" number, but doesn't
-  give a discrete list of "round trip" trades (entry → exit) the way most
-  trade journals present history. See backlog #1.
+- Unrealized P&L (open positions, `/api/portfolio`) uses weighted-average
+  cost, not FIFO — intentionally simpler, since it only needs to answer
+  "am I up or down on this position right now". Closed-trade history uses
+  proper FIFO lot matching instead (`services/round_trips.py`); the two
+  are separate calculations for separate questions.
 - Fills are journaled as-is; there's no way to attach notes, tags, or a
   strategy label to a trade yet. See backlog #2.
 - `DELETE /api/trades` wipes everything — no per-import undo. See backlog #7.
@@ -114,7 +122,7 @@ each tier.
 
 | # | Feature | Status |
 |---|---|---|
-| 1 | **Round-trip trade view**: FIFO-match opening/closing fills per symbol into discrete entry→exit trades (side, quantity, entry/exit price & time, hold duration, P&L), as a new view alongside the raw fills blotter | planned |
+| 1 | **Round-trip trade view**: FIFO-match opening/closing fills per symbol into discrete entry→exit trades (side, quantity, entry/exit price & time, hold duration, P&L), as a new view alongside the raw fills blotter | done |
 | 2 | **Trade notes & tags**: free-text notes + strategy/setup tags attached to a round-trip trade, editable in the UI | planned |
 | 3 | **Equity curve**: cumulative realized P&L over time as a line chart on the dashboard | planned |
 | 4 | **Symbol performance breakdown**: P&L, win rate, trade count grouped by symbol | planned |
@@ -139,4 +147,8 @@ each tier.
 
 ## 8. Changelog
 
+- 2026-08-30 — Backlog #1 done: round-trip trade view (FIFO fill matching,
+  `services/round_trips.py`, `GET /api/trades/round-trips`, Trades page
+  toggle). 7 new backend unit tests (24 total passing). Verified against
+  real Postgres and in-browser.
 - 2026-08-30 — Spec created, capturing state after IBKR import + calendar/aggregation/summary + live portfolio/FX features. Backlog drafted.

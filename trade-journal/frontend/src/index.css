@@ -318,6 +318,26 @@ th {
   color: var(--red);
 }
 
+.side-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.side-badge.long {
+  background: var(--green-dim);
+  color: var(--green);
+}
+
+.side-badge.short {
+  background: var(--red-dim);
+  color: var(--red);
+}
+
 .filters {
   display: flex;
   gap: 10px;

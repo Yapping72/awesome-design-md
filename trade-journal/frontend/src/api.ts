@@ -4,6 +4,7 @@ import type {
   FxRate,
   PeriodPnl,
   Portfolio,
+  RoundTripsPage,
   Summary,
   TradesPage,
   UploadResult,
@@ -61,6 +62,18 @@ export function getTrades(params: {
   if (params.pageSize) qs.set("page_size", String(params.pageSize));
   if (params.symbol) qs.set("symbol", params.symbol);
   return request<TradesPage>(`/api/trades?${qs.toString()}`);
+}
+
+export function getRoundTrips(params: {
+  page?: number;
+  pageSize?: number;
+  symbol?: string;
+}): Promise<RoundTripsPage> {
+  const qs = new URLSearchParams();
+  if (params.page) qs.set("page", String(params.page));
+  if (params.pageSize) qs.set("page_size", String(params.pageSize));
+  if (params.symbol) qs.set("symbol", params.symbol);
+  return request<RoundTripsPage>(`/api/trades/round-trips?${qs.toString()}`);
 }
 
 export function getUsdSgdRate(): Promise<FxRate> {

@@ -6,8 +6,36 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from .. import database, models, schemas
+from ..services.round_trips import compute_round_trips
 
 router = APIRouter(prefix="/api/trades", tags=["trades"])
+
+
+@router.get("/round-trips", response_model=schemas.RoundTripsPage)
+def list_round_trips(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=500),
+    symbol: Optional[str] = None,
+    db: Session = Depends(database.get_db),
+):
+    round_trips = compute_round_trips(db)
+    if symbol:
+        needle = symbol.lower()
+        round_trips = [rt for rt in round_trips if needle in rt["symbol"].lower()]
+
+    # Most recent exit first, matching the raw-fills blotter's ordering.
+    round_trips.sort(key=lambda rt: rt["exit_time"], reverse=True)
+
+    total = len(round_trips)
+    start_idx = (page - 1) * page_size
+    page_items = round_trips[start_idx : start_idx + page_size]
+
+    return schemas.RoundTripsPage(
+        total=total,
+        page=page,
+        page_size=page_size,
+        items=[schemas.RoundTripOut(**rt) for rt in page_items],
+    )
 
 
 @router.get("", response_model=schemas.TradesPage)

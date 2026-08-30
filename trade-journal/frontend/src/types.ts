@@ -55,6 +55,26 @@ export interface UploadResult {
 
 export type AggregationPeriod = "day" | "week" | "month";
 
+export interface RoundTrip {
+  symbol: string;
+  side: "long" | "short";
+  quantity: number;
+  entry_time: string;
+  exit_time: string;
+  entry_price: number;
+  exit_price: number;
+  commission: number;
+  realized_pnl: number;
+  hold_seconds: number;
+}
+
+export interface RoundTripsPage {
+  total: number;
+  page: number;
+  page_size: number;
+  items: RoundTrip[];
+}
+
 export interface FxRate {
   pair: string;
   rate: number | null;
