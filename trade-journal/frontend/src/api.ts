@@ -14,7 +14,12 @@ import type {
   UploadResult,
 } from "./types";
 
-const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+// Empty by default (relative paths) so a built image works unmodified
+// behind nginx's same-origin /api proxy (nginx.conf) regardless of what
+// host/port it's deployed at — no rebuild needed per environment. Local
+// `npm run dev` (Vite's dev server doesn't proxy to the backend on its
+// own) sets VITE_API_URL explicitly instead; see README.
+const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
 // CSV exports are plain GET downloads (the server sets Content-Disposition),
 // so components link straight to these URLs rather than fetching them.

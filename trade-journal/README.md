@@ -39,7 +39,15 @@ docker compose up --build
 
 The database schema is brought up to date automatically on backend startup
 (`alembic upgrade head` runs in the app's lifespan handler) — no manual
-migration step needed to get a fresh container running.
+migration step needed to get a fresh container running. Both the backend
+and frontend images have a `HEALTHCHECK`, and `docker compose ps` reflects
+real readiness (not just "container started") — the frontend waits for the
+backend to report healthy before it starts.
+
+The frontend image needs no backend URL baked in: nginx (`frontend/nginx.conf`)
+proxies `/api/*` same-origin to the backend container, so the browser always
+calls whatever host it loaded the page from. The same built image works
+unmodified wherever you deploy the compose stack.
 
 ## Local development (without Docker)
 
@@ -116,3 +124,11 @@ canonical, always-current schema) at `/docs` on the running backend.
   opens). `backend/app/services/positions.py` tracks a running
   weighted-average cost per symbol from the imported fills — simpler than
   FIFO lot tracking and a standard approximation for this purpose.
+- **No baked-in API URL**: an earlier version passed `VITE_API_URL` as a
+  Docker build arg, which meant the built frontend image only worked
+  against whatever host that value pointed at — rebuild required to deploy
+  anywhere else. nginx now reverse-proxies `/api/*` to the backend
+  container, so the frontend just calls relative paths against its own
+  origin and the same image is portable across environments. (Local
+  `npm run dev` still sets `VITE_API_URL` explicitly, since Vite's dev
+  server doesn't proxy to the backend on its own.)

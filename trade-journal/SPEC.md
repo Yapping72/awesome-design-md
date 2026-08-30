@@ -20,6 +20,15 @@ trade-journal/
 └── docker-compose.yml   postgres + backend + frontend(nginx)
 ```
 
+The frontend image carries no backend URL baked in: nginx
+(`frontend/nginx.conf`) reverse-proxies `/api/*` same-origin to the backend
+container, so the browser always calls whatever host served the page, and
+the same built image is portable across environments without a rebuild.
+Both service images declare a `HEALTHCHECK`, and `frontend`'s
+`depends_on: backend: condition: service_healthy` means it only starts
+once the backend is actually answering `/api/health`, not just "the
+container process started."
+
 - **Database**: PostgreSQL. Tables: `executions`, `trade_notes`. Schema is
   managed by **Alembic** migrations (`backend/alembic/versions/`); the app
   runs `alembic upgrade head` itself in its lifespan handler on startup, so
@@ -208,11 +217,49 @@ each tier.
 | # | Feature | Status |
 |---|---|---|
 | 10 | Light theme toggle (dark exists today) | done |
-| 11 | Docker Compose healthchecks for backend/frontend, runtime-configurable frontend API URL (currently baked in at image build time) | planned |
+| 11 | Docker Compose healthchecks for backend/frontend, runtime-configurable frontend API URL (currently baked in at image build time) | done |
 | 12 | Mobile-responsive layout pass | planned |
 
 ## 8. Changelog
 
+- 2026-08-30 — Backlog #11 done: Docker healthchecks + runtime-portable
+  frontend image. Root cause of the "baked in at build time" problem: the
+  frontend previously received `VITE_API_URL` as a build ARG, so the
+  built image only worked pointed at whatever host that value named —
+  any other deploy host needed a rebuild. Fixed properly rather than
+  patched: `frontend/nginx.conf` now reverse-proxies `/api/*` to the
+  `backend` container (same-origin from the browser's perspective, so no
+  CORS involved either), `api.ts`'s `API_BASE` defaults to `""` (relative
+  paths) instead of `http://localhost:8000`, and the Dockerfile's
+  `VITE_API_URL` ARG default is now empty — `docker-compose.yml` no
+  longer passes a build arg at all. Local `npm run dev` is unaffected
+  (still sets `VITE_API_URL` explicitly, since Vite's dev server doesn't
+  proxy to the backend). Added `HEALTHCHECK` to both Dockerfiles (backend
+  uses Python's stdlib `urllib.request` against `/api/health` rather than
+  installing curl; frontend uses `wget --spider`, already present in
+  `nginx:alpine`), and `frontend`'s `depends_on` now waits on
+  `backend: condition: service_healthy`. Bonus fix: the frontend
+  Dockerfile now copies `package-lock.json` and runs `npm ci` instead of
+  `npm install`, for reproducible builds.
+
+  Verified for real, not just by reading the config: got a working Docker
+  daemon this session (bypassing an init-script `ulimit` failure by
+  running `dockerd` directly) and confirmed with `docker info`/`docker
+  compose` that it's genuinely functional — but this sandbox's egress
+  policy blocks Docker Hub itself, so `docker compose up --build` can't
+  pull `postgres`/`python`/`node`/`nginx` base images here (same class of
+  restriction as the Yahoo Finance block noted earlier in this session).
+  Validated the actual mechanism instead: installed nginx directly,
+  confirmed the real `nginx.conf` parses (`nginx -t`) with only the
+  expected complaint about `backend` not being a resolvable host outside
+  Docker's network, then built the frontend with `VITE_API_URL` *unset*
+  and grepped the output bundle to confirm no `localhost:8000` ended up
+  hardcoded in it, then served that exact build through nginx configured
+  exactly like `frontend/nginx.conf` (backend aliased to `127.0.0.1` via
+  `/etc/hosts`) with the real FastAPI backend running behind it — loaded
+  it in a real browser and got a fully working dashboard (upload history,
+  summary stats, equity curve all populated) with zero console errors,
+  proving the same-origin proxy actually works end to end.
 - 2026-08-30 — Backlog #10 done: light theme toggle. Added a full light
   palette as `:root[data-theme="light"]` overrides in `index.css`
   (`--bg`/`--panel`/`--text`/etc. all redefined; the dark palette stays
