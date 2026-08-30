@@ -231,5 +231,6 @@ def list_trades(
 @router.delete("")
 def clear_trades(db: Session = Depends(database.get_db)):
     deleted = db.query(models.Execution).delete()
+    db.query(models.UploadBatch).delete()
     db.commit()
     return {"deleted": deleted}

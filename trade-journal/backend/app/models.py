@@ -1,6 +1,24 @@
-from sqlalchemy import Column, Date, DateTime, Float, Integer, String, func
+from sqlalchemy import Column, Date, DateTime, Float, ForeignKey, Integer, String, func
 
 from .database import Base
+
+
+class UploadBatch(Base):
+    """One CSV upload. Executions record which batch inserted them so an
+    import can be reviewed or undone without wiping the whole journal.
+
+    Only newly-inserted fills are attributed to a batch — a fill that was
+    already present (skipped as a duplicate on re-upload) keeps belonging to
+    whichever batch first inserted it, so deleting a later, overlapping
+    upload doesn't remove fills that also came from an earlier one.
+    """
+
+    __tablename__ = "upload_batches"
+
+    id = Column(Integer, primary_key=True, index=True)
+    filename = Column(String, nullable=False)
+    row_count = Column(Integer, nullable=False, default=0)
+    uploaded_at = Column(DateTime, server_default=func.now())
 
 
 class Execution(Base):
@@ -15,6 +33,7 @@ class Execution(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     external_id = Column(String, unique=True, index=True, nullable=False)
+    batch_id = Column(Integer, ForeignKey("upload_batches.id"), nullable=True, index=True)
     account_id = Column(String, nullable=True)
     asset_category = Column(String, nullable=True)
     currency = Column(String, nullable=True)

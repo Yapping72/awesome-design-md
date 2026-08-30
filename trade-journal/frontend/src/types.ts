@@ -53,6 +53,13 @@ export interface UploadResult {
   skipped_duplicates: number;
 }
 
+export interface UploadBatch {
+  id: number;
+  filename: string;
+  row_count: number;
+  uploaded_at: string;
+}
+
 export type AggregationPeriod = "day" | "week" | "month";
 
 export interface RoundTrip {

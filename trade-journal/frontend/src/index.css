@@ -172,6 +172,57 @@ nav.tabs button.active {
   color: var(--green);
 }
 
+.upload-history {
+  margin-top: 16px;
+  border-top: 1px solid var(--panel-border);
+  padding-top: 12px;
+}
+
+.upload-history-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+
+.upload-history-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  font-size: 13px;
+}
+
+.upload-history-filename {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 240px;
+}
+
+.upload-history-meta {
+  color: var(--text-dim);
+  font-size: 12px;
+  flex: 1;
+}
+
+.upload-history-delete {
+  background: transparent;
+  border: 1px solid var(--panel-border);
+  color: var(--red);
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.upload-history-delete:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));

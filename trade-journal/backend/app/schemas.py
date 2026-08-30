@@ -79,6 +79,15 @@ class UploadResult(BaseModel):
     skipped_duplicates: int
 
 
+class UploadBatchOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    filename: str
+    row_count: int
+    uploaded_at: datetime
+
+
 class PeriodPnl(BaseModel):
     period: date
     pnl: float

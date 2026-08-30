@@ -10,6 +10,7 @@ import type {
   SymbolPerformance,
   TradeNote,
   TradesPage,
+  UploadBatch,
   UploadResult,
 } from "./types";
 
@@ -40,6 +41,14 @@ export function uploadReport(file: File): Promise<UploadResult> {
   const form = new FormData();
   form.append("file", file);
   return request<UploadResult>("/api/upload", { method: "POST", body: form });
+}
+
+export function getUploadBatches(): Promise<UploadBatch[]> {
+  return request<UploadBatch[]>("/api/uploads");
+}
+
+export function deleteUploadBatch(batchId: number): Promise<{ deleted_fills: number }> {
+  return request<{ deleted_fills: number }>(`/api/uploads/${batchId}`, { method: "DELETE" });
 }
 
 export function getCalendar(year: number, month: number): Promise<DayPnl[]> {
