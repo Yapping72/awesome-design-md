@@ -44,3 +44,12 @@ def aggregate_pnl(
 @router.get("/summary", response_model=schemas.Summary)
 def get_summary(db: Session = Depends(database.get_db)):
     return pnl_service.summary(db)
+
+
+@router.get("/equity-curve", response_model=list[schemas.EquityPoint])
+def equity_curve(
+    start: Optional[date] = None,
+    end: Optional[date] = None,
+    db: Session = Depends(database.get_db),
+):
+    return pnl_service.equity_curve(db, start=start, end=end)

@@ -1,6 +1,7 @@
 import type {
   AggregationPeriod,
   DayPnl,
+  EquityPoint,
   FxRate,
   PeriodPnl,
   Portfolio,
@@ -51,6 +52,10 @@ export function getAggregate(
 
 export function getSummary(): Promise<Summary> {
   return request<Summary>("/api/pnl/summary");
+}
+
+export function getEquityCurve(): Promise<EquityPoint[]> {
+  return request<EquityPoint[]>("/api/pnl/equity-curve");
 }
 
 export function getTrades(params: {

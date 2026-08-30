@@ -81,6 +81,12 @@ class DayPnl(BaseModel):
     trade_count: int
 
 
+class EquityPoint(BaseModel):
+    date: date
+    pnl: float
+    cumulative_pnl: float
+
+
 class FxRate(BaseModel):
     pair: str
     rate: Optional[float] = None

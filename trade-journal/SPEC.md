@@ -99,6 +99,9 @@ trade-journal/
 - **Live FX**: USD/SGD rate ticker in the header
   (`GET /api/fx/usdsgd`), and portfolio totals also shown converted to
   SGD.
+- **Equity curve**: cumulative realized net P&L over time as an area
+  chart on the dashboard (`GET /api/pnl/equity-curve`), a running sum
+  over the same daily P&L used by the calendar view.
 
 ## 5. API reference
 
@@ -108,6 +111,7 @@ trade-journal/
 | GET | `/api/pnl/calendar` | Daily P&L for `year`/`month` |
 | GET | `/api/pnl/aggregate` | P&L by `period=day\|week\|month`, optional `start`/`end` |
 | GET | `/api/pnl/summary` | Overall summary stats |
+| GET | `/api/pnl/equity-curve` | Cumulative realized P&L over time, optional `start`/`end` |
 | GET | `/api/trades` | Paginated fills (`page`, `page_size`, `symbol`, `start`, `end`) |
 | GET | `/api/trades/round-trips` | Paginated FIFO-matched round-trip trades (`page`, `page_size`, `symbol`) |
 | PUT | `/api/trades/round-trips/{round_trip_id}/notes` | Upsert notes/tags for a round-trip trade |
@@ -140,7 +144,7 @@ each tier.
 |---|---|---|
 | 1 | **Round-trip trade view**: FIFO-match opening/closing fills per symbol into discrete entry→exit trades (side, quantity, entry/exit price & time, hold duration, P&L), as a new view alongside the raw fills blotter | done |
 | 2 | **Trade notes & tags**: free-text notes + strategy/setup tags attached to a round-trip trade, editable in the UI | done |
-| 3 | **Equity curve**: cumulative realized P&L over time as a line chart on the dashboard | planned |
+| 3 | **Equity curve**: cumulative realized P&L over time as a line chart on the dashboard | done |
 | 4 | **Symbol performance breakdown**: P&L, win rate, trade count grouped by symbol | planned |
 | 5 | **CSV export**: download trades / round-trips / daily P&L as CSV | planned |
 
@@ -163,6 +167,12 @@ each tier.
 
 ## 8. Changelog
 
+- 2026-08-30 — Backlog #3 done: equity curve (`services/pnl.equity_curve`,
+  `GET /api/pnl/equity-curve`, `EquityCurveChart` area chart on the
+  dashboard). 3 new tests via TestClient+SQLite covering the cumulative
+  sum and date-range filtering (31 total passing). Verified against real
+  Postgres and in-browser — the rendered curve traces the exact daily P&L
+  path.
 - 2026-08-30 — Backlog #2 done: trade notes & tags (`trade_notes` table,
   `PUT /api/trades/round-trips/{id}/notes`, inline editor in the Round
   Trips table). 5 new backend tests, including an HTTP-level integration

@@ -71,6 +71,12 @@ export interface RoundTrip {
   tags: string[];
 }
 
+export interface EquityPoint {
+  date: string;
+  pnl: number;
+  cumulative_pnl: number;
+}
+
 export interface TradeNote {
   round_trip_id: string;
   notes: string | null;

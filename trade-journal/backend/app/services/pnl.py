@@ -56,6 +56,21 @@ def aggregate_pnl(
     return q.order_by(trunc).all()
 
 
+def equity_curve(db: Session, start: Optional[date] = None, end: Optional[date] = None):
+    """Cumulative realized P&L over time, one point per day that had a fill.
+
+    A running sum over daily_pnl rather than a SQL window function — the
+    row count here is bounded by trading days, not fills, so there's no
+    real cost to doing it in Python, and it keeps the query portable.
+    """
+    running_total = 0.0
+    points = []
+    for row in daily_pnl(db, start=start, end=end):
+        running_total += row.pnl
+        points.append({"date": row.period, "pnl": round(row.pnl, 2), "cumulative_pnl": round(running_total, 2)})
+    return points
+
+
 def summary(db: Session) -> dict:
     total_trades = db.query(func.count(models.Execution.id)).scalar() or 0
     total_pnl = db.query(func.sum(NET_PNL_EXPR)).scalar() or 0.0
