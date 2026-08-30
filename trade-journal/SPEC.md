@@ -28,6 +28,10 @@ trade-journal/
 - **Market data**: `yfinance` (Yahoo Finance) for equity quotes and the
   USD/SGD FX rate, in-process cached 30s, degrades to `null` on failure
   rather than erroring.
+- **CI**: `.github/workflows/trade-journal-ci.yml` runs on push/PR when
+  `trade-journal/**` changes — backend job runs pytest against a real
+  Postgres service container plus a smoke test of the running app
+  (health check, upload, summary); frontend job runs `tsc` + `vite build`.
 
 ## 3. Data model
 
@@ -167,7 +171,7 @@ each tier.
 | 6 | **Alembic migrations** replacing `create_all` | planned |
 | 7 | **Import batches**: track each upload as a batch, list upload history, allow deleting a single batch instead of only "delete everything" | planned |
 | 8 | **Trades table sorting & date-range filter** in the UI | planned |
-| 9 | **CI**: GitHub Actions running backend pytest + frontend typecheck/build on push | planned |
+| 9 | **CI**: GitHub Actions running backend pytest + frontend typecheck/build on push | done |
 
 ### Tier 3 — polish
 
@@ -179,6 +183,15 @@ each tier.
 
 ## 8. Changelog
 
+- 2026-08-30 — Backlog #9 done: CI
+  (`.github/workflows/trade-journal-ci.yml`), path-scoped to
+  `trade-journal/**` so it doesn't run on unrelated changes to this
+  repo's original curated-list content. Backend job runs pytest against a
+  real Postgres service container, then smoke-tests the running app
+  (health, upload, summary) the same way this session validated each
+  feature manually. Frontend job runs `npm ci` + `tsc` + `vite build`.
+  Validated the exact job steps locally (pytest, `npm ci`, the smoke-test
+  curl sequence) before committing, plus a YAML syntax check.
 - 2026-08-30 — Backlog #5 done, completing Tier 1: CSV export
   (`services/csv_export.py`; `GET /api/trades/export`,
   `GET /api/trades/round-trips/export`, `GET /api/pnl/export`; export
